@@ -8,10 +8,13 @@ use App\Models\DeviceControl;
 
 class SensorDataController extends Controller
 {
-    // Method untuk menerima data dari ESP32
+    // =========================================================================
+    // KELOMPOK 1: API UNTUK HARDWARE (ESP32)
+    // =========================================================================
+
+    // Menerima data sensor dari ESP32 (POST)
     public function store(Request $request)
     {
-        // Menyimpan data langsung (karena key request sudah sesuai dengan kolom DB)
         $data = SensorData::create([
             'biopond' => $request->biopond,
             'harvest' => $request->harvest,
@@ -24,10 +27,9 @@ class SensorDataController extends Controller
         return response()->json(['message' => 'Data berhasil disimpan', 'data' => $data], 201);
     }
 
-    // Mengirimkan JSON status kontrol ke ESP32
+    // Mengirimkan status kontrol terbaru ke ESP32 (GET)
     public function getControl()
     {
-        // Ambil data baris pertama (satu-satunya data kontrol kita)
         $control = DeviceControl::first();
         
         return response()->json([
@@ -36,17 +38,40 @@ class SensorDataController extends Controller
         ]);
     }
 
-    
-    // Method untuk menampilkan data di Web
+    // =========================================================================
+    // KELOMPOK 2: MENAMPILKAN HALAMAN WEB (VIEWS)
+    // =========================================================================
+
+    // 1. Halaman Utama (Summary Kondisi Terkini)
     public function index()
     {
-        // Ambil 20 data terbaru
-        $sensors = SensorData::latest()->take(20)->get();
-        // Ambil status alat saat ini untuk ditampilkan di tombol web
-        $control = DeviceControl::first(); 
-        
-        return view('sensor.index', compact('sensors', 'control'));
+        // Ambil 1 data paling baru untuk summary ringkasan
+        $latestData = SensorData::latest()->first(); 
+        return view('dashboard.index', compact('latestData'));
     }
+
+    // 2. Halaman e-Logbook (Riwayat Data Tabel)
+    public function logbook()
+    {
+        // Pakai paginate(20) agar halaman ada navigasi Next/Prev
+        $sensors = SensorData::latest()->paginate(20); 
+        return view('logbook.index', compact('sensors'));
+    }
+
+    // 3. Halaman Kontrol Aktuator Jarak Jauh
+    public function controlPanel()
+    {
+        // Ambil status terkini untuk ditampilkan di tombol web
+        $control = DeviceControl::first();
+        // Ambil data sensor terbaru untuk panduan manual override
+        $latestData = SensorData::latest()->first(); 
+        
+        return view('control.index', compact('control', 'latestData'));
+    }
+
+    // =========================================================================
+    // KELOMPOK 3: AKSI DARI HALAMAN WEB (WEB ACTIONS)
+    // =========================================================================
 
     // Method KHUSUS WEB untuk menerima klik tombol dan menyimpannya ke DB
     public function updateControl(Request $request)
