@@ -11,3 +11,4 @@ Route::get('/user', function (Request $request) {
 Route::post('/sensor', [SensorDataController::class, 'store']);
 Route::get('/control', [SensorDataController::class, 'getControl']);
 Route::post('/control', [SensorDataController::class, 'updateControl']);
+Route::get('/statistik-data', [App\Http\Controllers\SensorDataController::class, 'getStatisticsData']);

@@ -7,6 +7,7 @@ use App\Http\Controllers\SensorDataController;
 Route::get('/', [SensorDataController::class, 'index']);
 
 // (Nanti Halaman Statistik menyusul di sini)
+Route::get('/statistik', [SensorDataController::class, 'statistik']);
 
 // Halaman e-Logbook
 Route::get('/logbook', [SensorDataController::class, 'logbook']);
