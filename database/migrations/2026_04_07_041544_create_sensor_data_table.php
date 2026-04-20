@@ -17,7 +17,7 @@ return new class extends Migration
         $table->integer('harvest');
         $table->float('temp');
         $table->float('hum');
-        $table->integer('soil');
+        $table->json('soil');
         $table->integer('ammonia');
         $table->timestamps();
     });

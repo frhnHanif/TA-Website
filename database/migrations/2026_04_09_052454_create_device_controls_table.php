@@ -13,6 +13,7 @@ return new class extends Migration
 {
     Schema::create('device_controls', function (Blueprint $table) {
         $table->id();
+        $table->boolean('is_manual')->default(0);
         $table->json('mist'); // Simpan array [1,0,1,0,0,0]
         $table->integer('fan')->default(0); // Kecepatan 0-100
         $table->timestamps();

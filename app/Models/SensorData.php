@@ -11,5 +11,6 @@ class SensorData extends Model
     // Casting field biopond dari JSON ke Array otomatis
     protected $casts = [
         'biopond' => 'array',
+        'soil'    => 'array',
     ];
 }

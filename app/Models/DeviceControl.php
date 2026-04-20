@@ -11,6 +11,7 @@ class DeviceControl extends Model
 
     // Mengizinkan pengisian data massal untuk 2 kolom ini
     protected $fillable = [
+        'is_manual',
         'mist',
         'fan',
     ];
@@ -18,5 +19,6 @@ class DeviceControl extends Model
     // Memberi tahu Laravel bahwa 'mist' harus diperlakukan sebagai Array
     protected $casts = [
         'mist' => 'array',
+        'is_manual' => 'boolean',
     ];
 }

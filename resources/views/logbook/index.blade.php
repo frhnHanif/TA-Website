@@ -29,7 +29,9 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{{ $sensor->created_at->format('d M Y H:i:s') }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $sensor->temp }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $sensor->hum }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $sensor->soil }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ is_array($sensor->soil) ? implode(', ', $sensor->soil) : $sensor->soil }}
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $sensor->ammonia > 30 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">
                                     {{ $sensor->ammonia }}

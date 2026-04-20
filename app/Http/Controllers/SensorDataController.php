@@ -33,6 +33,7 @@ class SensorDataController extends Controller
         $control = DeviceControl::first();
         
         return response()->json([
+            'is_manual' => $control->is_manual,
             'mist' => $control->mist,
             'fan' => $control->fan
         ]);
@@ -77,6 +78,12 @@ class SensorDataController extends Controller
     public function updateControl(Request $request)
     {
         $control = DeviceControl::first();
+
+        // Tangkap perubahan Mode (Manual/Auto)
+        if ($request->has('is_manual')) {
+            $control->is_manual = $request->is_manual;
+        }
+
 
         // Jika user menggeser slider kipas
         if ($request->has('fan')) {
