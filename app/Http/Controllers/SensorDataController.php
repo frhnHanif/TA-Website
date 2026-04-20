@@ -46,9 +46,21 @@ class SensorDataController extends Controller
     // 1. Halaman Utama (Summary Kondisi Terkini)
     public function index()
     {
-        // Ambil 1 data paling baru untuk summary ringkasan
+        // Ambil 1 data paling baru untuk indikator utama
         $latestData = SensorData::latest()->first(); 
-        return view('dashboard.index', compact('latestData'));
+        
+        // Ambil 5 data terakhir untuk preview logbook di dashboard
+        $recentLogs = SensorData::latest()->take(5)->get();
+
+        // Hitung ringkasan statistik khusus untuk hari ini
+        $todayData = SensorData::whereDate('created_at', \Carbon\Carbon::today())->get();
+        $dailyStats = [
+            'avg_temp' => $todayData->count() > 0 ? round($todayData->avg('temp'), 1) : ($latestData ? $latestData->temp : 0),
+            'avg_hum' => $todayData->count() > 0 ? round($todayData->avg('hum'), 1) : ($latestData ? $latestData->hum : 0),
+            'max_ammonia' => $todayData->count() > 0 ? $todayData->max('ammonia') : ($latestData ? $latestData->ammonia : 0),
+        ];
+
+        return view('dashboard.index', compact('latestData', 'recentLogs', 'dailyStats'));
     }
 
     // 2. Halaman e-Logbook (Riwayat Data Tabel)
