@@ -89,14 +89,14 @@
                 <a href="/" class="{{ request()->is('/') ? 'bg-amber-50 text-amber-600 font-bold' : 'text-gray-600 hover:bg-gray-50' }} px-4 py-3 rounded-xl transition-colors flex items-center gap-3">
                     <i class="fa-solid fa-border-all w-5 text-center"></i> Dashboard
                 </a>
+                <a href="/statistik" class="{{ request()->is('statistik') ? 'bg-amber-50 text-amber-600 font-bold' : 'text-gray-600 hover:bg-gray-50' }} px-4 py-3 rounded-xl transition-colors flex items-center gap-3">
+                    <i class="fa-solid fa-chart-simple w-5 text-center"></i> Statistik & Analitik
+                </a>
                 <a href="/logbook" class="{{ request()->is('logbook') ? 'bg-amber-50 text-amber-600 font-bold' : 'text-gray-600 hover:bg-gray-50' }} px-4 py-3 rounded-xl transition-colors flex items-center gap-3">
                     <i class="fa-solid fa-book-open w-5 text-center"></i> Logbook
                 </a>
                 <a href="/control" class="{{ request()->is('control') ? 'bg-amber-50 text-amber-600 font-bold' : 'text-gray-600 hover:bg-gray-50' }} px-4 py-3 rounded-xl transition-colors flex items-center gap-3">
                     <i class="fa-solid fa-sliders w-5 text-center"></i> Kontrol
-                </a>
-                <a href="/statistik" class="{{ request()->is('statistik') ? 'bg-amber-50 text-amber-600 font-bold' : 'text-gray-600 hover:bg-gray-50' }} px-4 py-3 rounded-xl transition-colors flex items-center gap-3">
-                    <i class="fa-solid fa-chart-simple w-5 text-center"></i> Statistik & Analitik
                 </a>
             </div>
         </div>

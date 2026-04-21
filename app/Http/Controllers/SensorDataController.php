@@ -64,10 +64,79 @@ class SensorDataController extends Controller
     }
 
     // 2. Halaman e-Logbook (Riwayat Data Tabel)
-    public function logbook()
+     public function logbook(Request $request)
     {
-        // Pakai paginate(20) agar halaman ada navigasi Next/Prev
-        $sensors = SensorData::latest()->paginate(20); 
+        $query = SensorData::query();
+
+        // 1. Logika Filter Tanggal
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        // Jika tidak ada filter tanggal, tampilkan default 1 hari terakhir (24 jam)
+        if (!$request->filled('start_date') && !$request->filled('end_date')) {
+            $query->where('created_at', '>=', now()->subDay());
+        }
+
+        // 2. Logika Pengurutan (Terbaru/Terlama)
+        $sort = $request->query('sort', 'desc');
+        if ($sort === 'asc') {
+            $query->oldest();
+        } else {
+            $query->latest();
+        }
+
+        // 3. Logika Export ke Excel (CSV)
+        if ($request->query('export') === 'excel') {
+            // Ambil semua data yang sudah difilter tanpa Pagination
+            $dataExport = $query->get();
+            
+            $filename = "Laporan_EcoScale_" . date('Ymd_His') . ".csv";
+            $headers = [
+                "Content-type"        => "text/csv",
+                "Content-Disposition" => "attachment; filename=$filename",
+                "Pragma"              => "no-cache",
+                "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+                "Expires"             => "0"
+            ];
+            
+            // Kolom Header Excel
+            $columns = ['Tanggal', 'Waktu', 'Suhu (C)', 'Kelembaban Udara (%)', 'Kelembaban Tanah (Avg %)', 'Amonia (ppm)', 'Total Massa Maggot (kg)'];
+            
+            $callback = function() use($dataExport, $columns) {
+                $file = fopen('php://output', 'w');
+                fputcsv($file, $columns);
+                
+                foreach ($dataExport as $row) {
+                    $biopondArray = is_array($row->biopond) ? $row->biopond : json_decode($row->biopond, true) ?? [];
+                    $totalBerat = array_sum($biopondArray) / 1000;
+                    
+                    $soilArray = is_array($row->soil) ? $row->soil : json_decode($row->soil, true) ?? [];
+                    $avgSoil = count($soilArray) > 0 ? array_sum($soilArray) / count($soilArray) : 0;
+                    
+                    fputcsv($file, [
+                        $row->created_at->format('d/m/Y'),
+                        $row->created_at->format('H:i:s'),
+                        $row->temp,
+                        $row->hum,
+                        number_format($avgSoil, 1, '.', ''),
+                        $row->ammonia,
+                        number_format($totalBerat, 2, '.', '')
+                    ]);
+                }
+                fclose($file);
+            };
+            
+            return response()->stream($callback, 200, $headers);
+        }
+
+        // 4. Tampilkan halaman web seperti biasa (dengan pagination)
+        // Gunakan withQueryString() agar saat pindah halaman, filter tanggalnya tidak hilang
+        $sensors = $query->paginate(20)->withQueryString(); 
+        
         return view('logbook.index', compact('sensors'));
     }
 
