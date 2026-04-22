@@ -94,7 +94,7 @@ class SensorDataController extends Controller
             // Ambil semua data yang sudah difilter tanpa Pagination
             $dataExport = $query->get();
             
-            $filename = "Laporan_EcoScale_" . date('Ymd_His') . ".csv";
+            $filename = "Laporan_SiMaggot_" . date('Ymd_His') . ".csv";
             $headers = [
                 "Content-type"        => "text/csv",
                 "Content-Disposition" => "attachment; filename=$filename",

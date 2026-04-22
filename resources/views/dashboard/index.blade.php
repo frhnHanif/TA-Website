@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard EcoScale')
+@section('title', 'Dashboard SiMaggot')
 
 @section('content')
     @if($latestData)
@@ -178,30 +178,45 @@
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                    <table class="w-full text-left border-collapse min-w-[600px]">
                         <thead>
                             <tr class="border-b border-gray-100">
-                                <th class="pb-3 text-xs font-black text-gray-400 uppercase tracking-wider">Waktu</th>
+                                <th class="pb-3 text-xs font-black text-gray-400 uppercase tracking-wider pl-2">Waktu</th>
                                 <th class="pb-3 text-xs font-black text-gray-400 uppercase tracking-wider">Suhu</th>
-                                <th class="pb-3 text-xs font-black text-gray-400 uppercase tracking-wider">Hum</th>
+                                <th class="pb-3 text-xs font-black text-gray-400 uppercase tracking-wider">Hum Udara</th>
+                                <th class="pb-3 text-xs font-black text-gray-400 uppercase tracking-wider">Hum Tanah (Avg)</th>
                                 <th class="pb-3 text-xs font-black text-gray-400 uppercase tracking-wider">Amonia</th>
+                                <th class="pb-3 text-xs font-black text-gray-400 uppercase tracking-wider text-right pr-2">Total Massa Maggot</th>
                             </tr>
                         </thead>
                         <tbody class="text-sm">
                             @forelse($recentLogs as $log)
+                                @php
+                                    // Hitung Total Massa Maggot
+                                    $biopondArray = is_array($log->biopond) ? $log->biopond : json_decode($log->biopond, true) ?? [];
+                                    $totalBerat = array_sum($biopondArray) / 1000;
+                                    
+                                    // Hitung Rata-rata Kelembaban Tanah
+                                    $soilArray = is_array($log->soil) ? $log->soil : json_decode($log->soil, true) ?? [];
+                                    $avgSoil = count($soilArray) > 0 ? array_sum($soilArray) / count($soilArray) : 0;
+                                @endphp
                                 <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors group">
-                                    <td class="py-3 font-medium text-gray-800">{{ $log->created_at->format('H:i') }} <span class="text-xs text-gray-400 ml-1">{{ $log->created_at->format('d/m') }}</span></td>
-                                    <td class="py-3 text-gray-600">{{ $log->temp }}°C</td>
-                                    <td class="py-3 text-gray-600">{{ $log->hum }}%</td>
+                                    <td class="py-3 pl-2 font-medium text-gray-800">{{ $log->created_at->format('H:i') }} <span class="text-xs text-gray-400 ml-1">{{ $log->created_at->format('d/m') }}</span></td>
+                                    <td class="py-3 text-gray-600">{{ $log->temp }} °C</td>
+                                    <td class="py-3 text-gray-600">{{ $log->hum }} %</td>
+                                    <td class="py-3 text-gray-600">{{ number_format($avgSoil, 1) }} %</td>
                                     <td class="py-3">
                                         <span class="px-2 py-1 text-[10px] font-bold rounded-md {{ $log->ammonia > 30 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
                                             {{ $log->ammonia }} ppm
                                         </span>
                                     </td>
+                                    <td class="py-3 text-right pr-2 font-bold text-gray-700">
+                                        {{ number_format($totalBerat, 2) }} kg
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="py-8 text-center text-gray-400 text-sm">Belum ada data terekam.</td>
+                                    <td colspan="6" class="py-8 text-center text-gray-400 text-sm">Belum ada data terekam.</td>
                                 </tr>
                             @endforelse
                         </tbody>

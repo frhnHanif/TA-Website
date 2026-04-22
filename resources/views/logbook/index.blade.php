@@ -74,7 +74,7 @@
                 <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
                     <i class="fa-solid fa-list-check text-blue-600"></i> Hasil Laporan
                 </h2>
-                <p class="text-sm text-gray-500 mt-1">Generate laporan EcoScale (Menampilkan {{ $sensors->total() }} data)</p>
+                <p class="text-sm text-gray-500 mt-1">Generate laporan SiMaggot (Menampilkan {{ $sensors->total() }} data)</p>
             </div>
             
             <!-- Tombol Export Excel -->
