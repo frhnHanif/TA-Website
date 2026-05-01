@@ -76,6 +76,7 @@
         <!-- ========================================== -->
         <!-- BAGIAN 1.5: SHORTCUT SIKLUS AKTIF (NEW)    -->
         <!-- ========================================== -->
+        @auth
         <a href="/cycle" class="block bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-5 sm:p-6 mb-6 hover:shadow-md hover:border-amber-300 hover:ring-2 hover:ring-amber-50 transition-all group">
             @if(isset($activeCycle) && $activeCycle)
                 <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 sm:gap-6">
@@ -122,6 +123,7 @@
                 </div>
             @endif
         </a>
+        @endauth
 
         <!-- ========================================== -->
         <!-- BAGIAN 2: DETAIL BIOPOND (MIDDLE)          -->
