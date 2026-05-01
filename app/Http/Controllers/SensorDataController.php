@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\SensorData;
 use App\Models\DeviceControl;
+use App\Models\Cycle;
 
 class SensorDataController extends Controller
 {
@@ -46,13 +47,9 @@ class SensorDataController extends Controller
     // 1. Halaman Utama (Summary Kondisi Terkini)
     public function index()
     {
-        // Ambil 1 data paling baru untuk indikator utama
         $latestData = SensorData::latest()->first(); 
-        
-        // Ambil 5 data terakhir untuk preview logbook di dashboard
         $recentLogs = SensorData::latest()->take(5)->get();
 
-        // Hitung ringkasan statistik khusus untuk hari ini
         $todayData = SensorData::whereDate('created_at', \Carbon\Carbon::today())->get();
         $dailyStats = [
             'avg_temp' => $todayData->count() > 0 ? round($todayData->avg('temp'), 1) : ($latestData ? $latestData->temp : 0),
@@ -60,7 +57,15 @@ class SensorDataController extends Controller
             'max_ammonia' => $todayData->count() > 0 ? $todayData->max('ammonia') : ($latestData ? $latestData->ammonia : 0),
         ];
 
-        return view('dashboard.index', compact('latestData', 'recentLogs', 'dailyStats'));
+        // Ambil Data Siklus yang Sedang Berjalan
+        $activeCycle = \App\Models\Cycle::where('status', 'berjalan')->first();
+
+        // Hitung Akumulasi dan Rata-rata Performa dari Siklus yang Selesai
+        $totalHarvest = \App\Models\Cycle::where('status', 'selesai')->sum('harvest_mass');
+        $avgWri = \App\Models\Cycle::where('status', 'selesai')->avg('wri_result') ?? 0;
+        $avgEci = \App\Models\Cycle::where('status', 'selesai')->avg('eci_result') ?? 0;
+
+        return view('dashboard.index', compact('latestData', 'recentLogs', 'dailyStats', 'activeCycle', 'totalHarvest', 'avgWri', 'avgEci'));
     }
 
     // 2. Halaman e-Logbook (Riwayat Data Tabel)
@@ -154,37 +159,33 @@ class SensorDataController extends Controller
     // 4. Halaman Statistik & Analitik
     public function statistik()
     {
-        // Ambil 50 data terbaru, lalu balik urutannya agar grafik berjalan dari kiri (lama) ke kanan (baru)
         $sensorHistory = SensorData::latest()->take(50)->get()->reverse()->values();
 
-        // Siapkan Label Waktu (Sumbu X)
         $timestamps = $sensorHistory->pluck('created_at')->map(function($date) {
             return $date->format('H:i');
         });
 
-        // Ekstrak data untuk Sumbu Y
         $tempData = $sensorHistory->pluck('temp');
         $humData = $sensorHistory->pluck('hum');
         $ammoniaData = $sensorHistory->pluck('ammonia');
         
-        // Hitung Tren Total Massa Biopond
         $totalMassData = $sensorHistory->map(function($item) {
             $biopond = is_array($item->biopond) ? $item->biopond : json_decode($item->biopond, true) ?? [];
-            return array_sum($biopond) / 1000; // Konversi ke kg
+            return array_sum($biopond) / 1000; 
         });
 
-        // Ambil data spesifik rak dari data paling mutakhir untuk grafik Bar
         $latestData = $sensorHistory->last();
         $latestBiopond = $latestData ? (is_array($latestData->biopond) ? $latestData->biopond : json_decode($latestData->biopond, true)) : [0,0,0,0,0,0];
         $latestSoil = $latestData ? (is_array($latestData->soil) ? $latestData->soil : json_decode($latestData->soil, true)) : [0,0,0,0,0,0];
 
-        // Total Panen (Akumulasi keseluruhan dari database)
-        $totalHarvest = SensorData::sum('harvest');
+        // Hitung Akumulasi dan Rata-rata Performa dari Siklus yang Selesai
+        $totalHarvest = \App\Models\Cycle::where('status', 'selesai')->sum('harvest_mass');
+        $avgWri = \App\Models\Cycle::where('status', 'selesai')->avg('wri_result') ?? 0;
+        $avgEci = \App\Models\Cycle::where('status', 'selesai')->avg('eci_result') ?? 0;
 
-        // Memperbaiki view ke folder 'statistik' agar sesuai
         return view('statistik.index', compact(
             'timestamps', 'tempData', 'humData', 'ammoniaData', 'totalMassData', 
-            'latestBiopond', 'latestSoil', 'totalHarvest'
+            'latestBiopond', 'latestSoil', 'totalHarvest', 'avgWri', 'avgEci'
         ));
     }
 

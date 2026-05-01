@@ -11,15 +11,15 @@
         <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between hover:shadow-md transition-shadow">
             <div>
                 <p class="text-green-100 text-sm font-bold uppercase tracking-wider mb-1">Total Akumulasi Panen</p>
-                <h3 class="text-3xl font-black">{{ number_format($totalHarvest / 1000, 2) }} <span class="text-lg font-medium">kg</span></h3>
+                <h3 class="text-3xl font-black">{{ number_format($totalHarvest, 2) }} <span class="text-lg font-medium">kg</span></h3>
             </div>
             <i class="fa-solid fa-box-open text-5xl opacity-30"></i>
         </div>
         
         <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between hover:shadow-md transition-shadow">
             <div>
-                <p class="text-blue-100 text-sm font-bold uppercase tracking-wider mb-1">Estimasi Waste Reduction (WRI)</p>
-                <h3 class="text-3xl font-black">68.5 <span class="text-lg font-medium">%</span></h3>
+                <p class="text-blue-100 text-sm font-bold uppercase tracking-wider mb-1">Rata-rata Waste Reduction (WRI)</p>
+                <h3 class="text-3xl font-black">{{ number_format($avgWri, 1) }} <span class="text-lg font-medium">%/hari</span></h3>
             </div>
             <i class="fa-solid fa-recycle text-5xl opacity-30"></i>
         </div>
@@ -27,7 +27,7 @@
         <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between hover:shadow-md transition-shadow">
             <div>
                 <p class="text-purple-100 text-sm font-bold uppercase tracking-wider mb-1">Efisiensi Biokonversi (ECI)</p>
-                <h3 class="text-3xl font-black">18.2 <span class="text-lg font-medium">%</span></h3>
+                <h3 class="text-3xl font-black">{{ number_format($avgEci, 1) }} <span class="text-lg font-medium">%</span></h3>
             </div>
             <i class="fa-solid fa-bug text-5xl opacity-30"></i>
         </div>

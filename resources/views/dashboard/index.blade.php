@@ -57,13 +57,13 @@
                 </div>
             </div>
 
-            <!-- Massa Total -->
+            <!-- Massa Total Maggot (Rak) -->
             <div class="bg-white rounded-[1.5rem] shadow-sm p-5 border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
                 <div class="w-12 h-12 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center text-xl shrink-0">
                     <i class="fa-solid fa-weight-hanging"></i>
                 </div>
                 <div>
-                    <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">Massa Total</p>
+                    <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">Massa Maggot</p>
                     @php
                         $biopondArray = is_array($latestData->biopond) ? $latestData->biopond : json_decode($latestData->biopond, true) ?? [];
                         $totalBerat = array_sum($biopondArray);
@@ -72,6 +72,56 @@
                 </div>
             </div>
         </div>
+
+        <!-- ========================================== -->
+        <!-- BAGIAN 1.5: SHORTCUT SIKLUS AKTIF (NEW)    -->
+        <!-- ========================================== -->
+        <a href="/cycle" class="block bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-5 sm:p-6 mb-6 hover:shadow-md hover:border-amber-300 hover:ring-2 hover:ring-amber-50 transition-all group">
+            @if(isset($activeCycle) && $activeCycle)
+                <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 sm:gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center text-xl shrink-0">
+                            <!-- Efek animasi putar lambat (fa-spin diganti agar tidak memusingkan) -->
+                            <i class="fa-solid fa-arrows-spin fa-spin" style="animation-duration: 3s;"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Siklus Aktif: {{ $activeCycle->batch_id }}</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Klik untuk mengelola pakan atau panen siklus ini.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full md:flex-1 md:max-w-md mt-2 md:mt-0">
+                        <div class="flex justify-between text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">
+                            <span>Hari ke-{{ $activeCycle->days_elapsed }}</span>
+                            @php $progress = min(100, ($activeCycle->days_elapsed / 21) * 100); @endphp
+                            <span class="text-amber-600">{{ round($progress) }}% (Target 21 Hari)</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                            <div class="bg-gradient-to-r from-amber-400 to-amber-500 h-full rounded-full transition-all duration-1000" style="width: {{ $progress }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 text-gray-400 group-hover:bg-amber-100 group-hover:text-amber-600 transition-colors shrink-0">
+                        <i class="fa-solid fa-arrow-right -rotate-45 group-hover:rotate-0 transition-transform"></i>
+                    </div>
+                </div>
+            @else
+                <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center text-xl shrink-0">
+                            <i class="fa-solid fa-power-off"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Sistem Standby (Tidak Ada Siklus)</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Klik kotak ini untuk masuk ke menu Manajemen Siklus dan memulai siklus baru.</p>
+                        </div>
+                    </div>
+                    <div class="text-amber-500 font-bold text-sm bg-amber-50 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 group-hover:bg-amber-500 group-hover:text-white transition-colors">
+                        Mulai Siklus Baru <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            @endif
+        </a>
 
         <!-- ========================================== -->
         <!-- BAGIAN 2: DETAIL BIOPOND (MIDDLE)          -->
@@ -90,7 +140,7 @@
                             <i class="fa-solid fa-layer-group text-gray-300 group-hover:text-amber-400 transition-colors"></i>
                         </div>
                         
-                        <!-- Massa (Desimal diperbaiki pakai round) -->
+                        <!-- Massa -->
                         <div class="mb-3">
                             <span class="block text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Massa Maggot</span>
                             <div class="flex items-baseline gap-1">
@@ -120,47 +170,29 @@
         <!-- ========================================== -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <!-- Kiri: Preview Statistik (Desain Gelap/Dark ala Debtrix dengan Data Analitik) -->
-            <a href="/statistik" class="block col-span-1 bg-gray-900 rounded-[1.5rem] shadow-sm p-6 text-white hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group flex flex-col justify-between">
-                <!-- Elemen dekorasi bg -->
-                <div class="absolute -right-6 -top-6 w-32 h-32 bg-amber-500 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                
-                <div class="flex justify-between items-start mb-6 relative z-10">
+            <a href="/statistik" class="block col-span-1 flex flex-col gap-4 group">
+                <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between group-hover:-translate-y-1 group-hover:shadow-lg transition-all">
                     <div>
-                        <h3 class="text-lg font-bold">Analitik Lanjutan</h3>
-                        <p class="text-xs text-gray-400 mt-1">Ringkasan performa sistem</p>
+                        <p class="text-green-100 text-xs font-bold uppercase tracking-wider mb-1">Total Akumulasi Panen</p>
+                        <h3 class="text-3xl font-black">{{ number_format($totalHarvest, 2) }} <span class="text-lg font-medium">kg</span></h3>
                     </div>
-                    <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-sm shrink-0">
-                        <i class="fa-solid fa-arrow-right -rotate-45 group-hover:rotate-0 transition-transform"></i>
+                    <i class="fa-solid fa-box-open text-5xl opacity-30"></i>
+                </div>
+                
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between group-hover:-translate-y-1 group-hover:shadow-lg transition-all delay-75">
+                    <div>
+                        <p class="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">Rata-rata Waste Reduction (WRI)</p>
+                        <h3 class="text-3xl font-black">{{ number_format($avgWri, 1) }} <span class="text-lg font-medium">%/hari</span></h3>
                     </div>
+                    <i class="fa-solid fa-recycle text-5xl opacity-30"></i>
                 </div>
 
-                <div class="space-y-4 relative z-10">
+                <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between group-hover:-translate-y-1 group-hover:shadow-lg transition-all delay-150">
                     <div>
-                        <p class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">Total Akumulasi Panen</p>
-                        <div class="flex items-center gap-3">
-                            <div class="w-2 h-8 rounded-full bg-green-500"></div>
-                            <span class="text-3xl font-black">{{ isset($totalHarvest) ? number_format($totalHarvest / 1000, 2) : '0.00' }} <span class="text-lg font-medium text-gray-400">kg</span></span>
-                        </div>
+                        <p class="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">Efisiensi Biokonversi (ECI)</p>
+                        <h3 class="text-3xl font-black">{{ number_format($avgEci, 1) }} <span class="text-lg font-medium">%</span></h3>
                     </div>
-                    <div>
-                        <p class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">Estimasi Waste Reduction (WRI)</p>
-                        <div class="flex items-center gap-3">
-                            <div class="w-2 h-8 rounded-full bg-blue-500"></div>
-                            <span class="text-3xl font-black">68.5 <span class="text-lg font-medium text-gray-400">%</span></span>
-                        </div>
-                    </div>
-                    <div class="pt-2 border-t border-gray-800">
-                        <p class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">Efisiensi Biokonversi (ECI)</p>
-                        <div class="flex items-center gap-3">
-                            <div class="w-2 h-8 rounded-full bg-purple-500"></div>
-                            <span class="text-2xl font-black text-amber-400">18.2 <span class="text-base font-medium text-amber-200/50">%</span></span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-6 w-full bg-white/10 hover:bg-white/20 text-center py-2.5 rounded-xl text-sm font-bold transition-colors backdrop-blur-sm">
-                    Lihat Detail Analitik
+                    <i class="fa-solid fa-bug text-5xl opacity-30"></i>
                 </div>
             </a>
 
@@ -192,11 +224,9 @@
                         <tbody class="text-sm">
                             @forelse($recentLogs as $log)
                                 @php
-                                    // Hitung Total Massa Maggot
                                     $biopondArray = is_array($log->biopond) ? $log->biopond : json_decode($log->biopond, true) ?? [];
                                     $totalBerat = array_sum($biopondArray) / 1000;
                                     
-                                    // Hitung Rata-rata Kelembaban Tanah
                                     $soilArray = is_array($log->soil) ? $log->soil : json_decode($log->soil, true) ?? [];
                                     $avgSoil = count($soilArray) > 0 ? array_sum($soilArray) / count($soilArray) : 0;
                                 @endphp
