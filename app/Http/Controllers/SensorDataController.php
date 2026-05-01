@@ -274,4 +274,66 @@ class SensorDataController extends Controller
         $control->save();
         return response()->json(['message' => 'Status berhasil diupdate!']);
     }
+
+    // Method Global Alert (AJAX Polling)
+   public function checkAlerts()
+    {
+        $alerts = [];
+        
+        // 1. Cek Peringatan Sensor (Kondisi Real-time)
+        $latestData = \App\Models\SensorData::latest()->first();
+        if ($latestData) {
+            $timeStr = $latestData->created_at->format('H:i'); // Ambil waktu sensor
+
+            // Peringatan Suhu Udara Tinggi
+            if ($latestData->temp > 30) {
+                $alerts[] = [
+                    'id' => 'temp_' . $latestData->id, // ID Unik
+                    'type' => 'danger',
+                    'title' => 'Peringatan Suhu Tinggi!',
+                    'message' => "Suhu saat ini mencapai {$latestData->temp}°C. Segera nyalakan kipas exhaust.",
+                    'time' => $timeStr
+                ];
+            }
+            // Peringatan Amonia Beracun
+            if ($latestData->ammonia > 20) {
+                $alerts[] = [
+                    'id' => 'nh3_' . $latestData->id,
+                    'type' => 'danger',
+                    'title' => 'Bahaya Amonia!',
+                    'message' => "Kadar amonia mencapai {$latestData->ammonia} ppm. Lingkungan beracun bagi maggot.",
+                    'time' => $timeStr
+                ];
+            }
+        }
+
+        // 2. Cek Pengingat Siklus (Operasional)
+        $activeCycle = \App\Models\Cycle::where('status', 'berjalan')->first();
+        if ($activeCycle) {
+            $days = $activeCycle->days_elapsed;
+            
+            // Reminder Panen (Target Hari ke-21)
+            if ($days >= 21) {
+                $alerts[] = [
+                    'id' => 'panen_' . $activeCycle->id . '_' . $days,
+                    'type' => 'warning',
+                    'title' => 'Waktunya Panen!',
+                    'message' => "Siklus {$activeCycle->batch_id} sudah mencapai hari ke-{$days}. Harap segera selesaikan siklus.",
+                    'time' => 'Hari ini'
+                ];
+            } 
+            // Reminder Pakan (Asumsi jadwal pakan setiap kelipatan 3 hari)
+            elseif ($days > 0 && $days % 3 == 0) {
+                $alerts[] = [
+                    'id' => 'pakan_' . $activeCycle->id . '_' . $days,
+                    'type' => 'info',
+                    'title' => 'Jadwal Pakan Tiba',
+                    'message' => "Hari ke-{$days} pada siklus aktif. Waktunya menambahkan sampah organik baru ke rak.",
+                    'time' => 'Hari ini'
+                ];
+            }
+        }
+
+        return response()->json(['alerts' => $alerts]);
+    }
 }

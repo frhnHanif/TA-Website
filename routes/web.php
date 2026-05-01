@@ -21,6 +21,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/cycle/start', [CycleController::class, 'store']);
     Route::post('/cycle/add-waste', [CycleController::class, 'addWaste'])->name('cycle.addWaste');
     Route::post('/cycle/finish', [CycleController::class, 'finish']);
+
+    // Rute Global Alert AJAX
+    Route::get('/api/check-alerts', [SensorDataController::class, 'checkAlerts']);
 });
 
 require __DIR__.'/auth.php'; // Ini bawaan Laravel Breeze untuk route login/logout
