@@ -9,7 +9,7 @@ use Carbon\Carbon;
 
 class CycleController extends Controller
 {
-    // 1. Menampilkan halaman Manajemen Siklus
+    // 1. Menampilkan halaman Manajemen Siklus & Prediksi ADD
     public function index()
     {
         $activeCycle = Cycle::where('status', 'berjalan')->first();
@@ -17,17 +17,64 @@ class CycleController extends Controller
 
         $avgTemp = 0;
         $avgHum = 0;
+        
+        // Variabel Tambahan untuk Model Thermal ADD
+        $accumulatedADD = 0;
+        $targetADD = 500; // Batas ambang thermal target BSF untuk siap panen (prepupa)
+        $addProgress = 0;
+        $estimatedRemainingDays = '-';
+        
         $latestSensor = SensorData::latest()->first(); // Ambil data sensor paling mutakhir
         
         if ($activeCycle) {
             $sensorHistory = SensorData::where('created_at', '>=', $activeCycle->start_date)->get();
+            
             if ($sensorHistory->count() > 0) {
                 $avgTemp = round($sensorHistory->avg('temp'), 1);
                 $avgHum = round($sensorHistory->avg('hum'), 1);
+
+                // --- LOGIKA HITUNG MODEL ACCUMULATED DEGREE DAYS (ADD) ---
+                // Kelompokkan log sensor berdasarkan tanggal pengerjaan
+                $perDayLogs = $sensorHistory->groupBy(function($data) {
+                    return Carbon::parse($data->created_at)->format('Y-m-d');
+                });
+
+                foreach ($perDayLogs as $date => $logs) {
+                    $dailyAvgTemp = $logs->avg('temp');
+                    
+                    // 15°C adalah Batas Suhu Dasar (Base Temperature) Biologis Maggot BSF
+                    if ($dailyAvgTemp > 15) { 
+                        $accumulatedADD += ($dailyAvgTemp - 15);
+                    }
+                }
+                
+                $accumulatedADD = round($accumulatedADD, 1);
+                
+                // Hitung Persentase Progress Kematangan Larva
+                $addProgress = min(round(($accumulatedADD / $targetADD) * 100, 1), 100);
+                
+                // Hitung Estimasi Sisa Hari Menuju Panen
+                $avgDailyADD = $avgTemp - 15;
+                if ($avgDailyADD > 0 && $accumulatedADD < $targetADD) {
+                    $remainingADD = $targetADD - $accumulatedADD;
+                    $estimatedRemainingDays = max(1, ceil($remainingADD / $avgDailyADD));
+                } else {
+                    $estimatedRemainingDays = 0; // Nilai 0 mengindikasikan fase Prepupa / Siap Panen
+                }
             }
         }
 
-        return view('cycle.index', compact('activeCycle', 'finishedCycles', 'avgTemp', 'avgHum', 'latestSensor'));
+        return view('cycle.index', compact(
+            'activeCycle', 
+            'finishedCycles', 
+            'avgTemp', 
+            'avgHum', 
+            'latestSensor', 
+            'accumulatedADD', 
+            'targetADD', 
+            'addProgress', 
+            'estimatedRemainingDays'
+        ));
     }
 
     // 2. Aksi: Memulai Siklus Baru

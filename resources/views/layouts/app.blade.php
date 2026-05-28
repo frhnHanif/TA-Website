@@ -302,29 +302,33 @@
         // Jalankan polling
         setTimeout(fetchAlerts, 2000); 
         setInterval(fetchAlerts, 60000); 
+    </script>
+    @endauth
 
-        // 8. Script Auto-Refresh Halaman Tertentu (Dashboard, Statistik, Logbook)
+    <!-- 2. Script Universal (Auto-Refresh untuk Publik & Admin) -->
+    <script>
         const autoRefreshPages = ['/', '/statistik', '/logbook']; 
         const currentPath = window.location.pathname;
 
         if (autoRefreshPages.includes(currentPath)) {
             setTimeout(() => {
-                // Cek apakah ada Modal yang sedang terbuka agar tidak mengganggu input
+                // Jangan refresh jika ada Modal yang sedang terbuka (mencegah kehilangan input data)
                 const isModalOpen = document.querySelector('.flex[id^="modal"]:not(.hidden)'); 
                 
                 if (!isModalOpen) {
                     window.location.reload();
                 } else {
-                    // Jika modal buka, tunda refresh 30 detik lagi
-                    console.log("Refresh ditunda karena modal sedang terbuka.");
-                    setInterval(() => {
-                        const stillOpen = document.querySelector('.flex[id^="modal"]:not(.hidden)');
-                        if(!stillOpen) window.location.reload();
-                    }, 30000);
+                    console.log("Refresh ditunda: Modal sedang terbuka.");
+                    const retry = setInterval(() => {
+                        if (!document.querySelector('.flex[id^="modal"]:not(.hidden)')) {
+                            window.location.reload();
+                            clearInterval(retry);
+                        }
+                    }, 30000); // Cek ulang setiap 30 detik
                 }
-            }, 60000); // Refresh setiap 1 menit
+            }, 60000); // Interval Refresh: 1 Menit
         }
     </script>
-    @endauth
+
 </body>
 </html>

@@ -25,76 +25,69 @@
         <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 sm:p-8 mb-6 relative overflow-hidden">
             <div class="absolute -right-20 -top-20 w-64 h-64 bg-amber-50 rounded-full blur-3xl opacity-60"></div>
             
-            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 relative z-10">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 pb-6 border-b border-gray-100">
+                <div>
+                    <span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">Siklus Berjalan</span>
+                    <h2 class="text-2xl font-bold text-gray-800 mt-2">{{ $activeCycle->batch_id }}</h2>
+                    <p class="text-sm text-gray-500 mt-1">Dimulai sejak: {{ \Carbon\Carbon::parse($activeCycle->start_date)->translatedFormat('d F Y (H:i)') }}</p>
+                </div>
+                <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                    <button onclick="openModal('modalPakan')" class="flex-1 sm:flex-initial bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-4 rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
+                        + Catat Pakan
+                    </button>
+                    <button onclick="openModal('modalPanen')" class="flex-1 sm:flex-initial bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm shadow-sm flex items-center justify-center gap-2">
+                        Selesaikan Siklus (Panen)
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                    <p class="text-xs text-gray-400 font-medium">Bibit Awal</p>
+                    <p class="text-xl font-bold text-gray-700 mt-1">{{ $activeCycle->initial_seed_mass }} <span class="text-xs font-normal text-gray-400">gram</span></p>
+                </div>
+                <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                    <p class="text-xs text-gray-400 font-medium">Total Input Sampah</p>
+                    <p class="text-xl font-bold text-gray-700 mt-1">{{ $activeCycle->total_waste_input }} <span class="text-xs font-normal text-gray-400">kg</span></p>
+                </div>
+                <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                    <p class="text-xs text-gray-400 font-medium">Rata-rata Suhu</p>
+                    <p class="text-xl font-bold text-gray-700 mt-1">{{ $avgTemp }} <span class="text-xs font-normal text-gray-400">°C</span></p>
+                </div>
+                <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                    <p class="text-xs text-gray-400 font-medium">Durasi Berjalan</p>
+                    <p class="text-xl font-bold text-gray-700 mt-1">{{ $activeCycle->days_elapsed }} <span class="text-xs font-normal text-gray-400">Hari</span></p>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 rounded-2xl p-5 relative overflow-hidden">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-3">
+                    <div>
+                        <h4 class="text-sm font-bold text-amber-900 flex items-center gap-2">
+                            <span>📅</span> Prediksi Waktu Panen
+                        </h4>
+                        <p class="text-xs text-amber-700/80 mt-0.5">*Perhitungan otomatis berdasarkan model Accumulated Degree Days (ADD)</p>
+                    </div>
+                    <div class="text-left md:text-right">
+                        @if($estimatedRemainingDays === 0)
+                            <span class="bg-green-500 text-white text-xs font-black px-3 py-1 rounded-lg uppercase animate-pulse shadow-sm">Siap Dipanen (Fase Prepupa)</span>
+                        @else
+                            <p class="text-xs text-amber-800 font-medium">Estimasi Sisa Waktu:</p>
+                            <p class="text-lg font-black text-amber-900"><span class="text-2xl">{{ $estimatedRemainingDays }}</span> Hari Lagi</p>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="w-full bg-amber-200/40 rounded-full h-3 p-0.5 border border-amber-200">
+                    <div class="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full transition-all duration-500" style="width: {{ $addProgress }}%"></div>
+                </div>
+            </div>
                 
-                <div class="w-full lg:w-1/2">
-                    <div class="flex items-center gap-3 mb-2">
-                        <span class="bg-green-100 text-green-700 font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider animate-pulse flex items-center gap-1.5">
-                            <span class="w-2 h-2 bg-green-500 rounded-full"></span> Siklus Berjalan
-                        </span>
-                        <span class="text-gray-400 font-bold text-sm">{{ $activeCycle->batch_id }}</span>
-                    </div>
-                    <h2 class="text-3xl font-black text-gray-800 mb-1">Hari ke-{{ $activeCycle->days_elapsed }} <span class="text-lg text-gray-400 font-medium tracking-normal">dari target 21 Hari</span></h2>
-                    <p class="text-sm text-gray-500">Siklus dimulai pada {{ $activeCycle->start_date->translatedFormat('d F Y') }}.</p>
-                </div>
-
-                <div class="w-full lg:w-auto flex flex-wrap gap-3">
-                    <button onclick="openModal('modalPakan')" class="flex-1 lg:flex-none bg-white border-2 border-gray-200 hover:border-amber-400 text-gray-700 font-bold py-2.5 px-5 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-plus text-amber-500"></i> Catat Pakan
-                    </button>
-                    <button onclick="openModal('modalPanen')" class="flex-1 lg:flex-none bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-5 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-check-double"></i> Selesai Panen
-                    </button>
+                <div class="flex justify-between text-[11px] font-bold text-amber-800">
+                    <!-- <span>Terakumulasi: <strong>{{ $accumulatedADD }}</strong> ADD</span>
+                    <span>Target: <strong>{{ $targetADD }}</strong> ADD ({{ $addProgress }}%)</span> -->
                 </div>
             </div>
-
-            <div class="mt-8 relative z-10">
-                <div class="flex justify-between text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">
-                    <span>0 Hari</span>
-                    @php $progress = min(100, ($activeCycle->days_elapsed / 21) * 100); @endphp
-                    <span class="text-amber-600">Progres ({{ round($progress) }}%)</span>
-                    <span>21 Hari</span>
-                </div>
-                <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden border border-gray-200/50">
-                    <div class="bg-gradient-to-r from-amber-300 to-amber-500 h-full rounded-full transition-all duration-1000 relative" style="width: {{ $progress }}%">
-                        <div class="absolute top-0 right-0 bottom-0 left-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full animate-[shimmer_2s_infinite]"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 relative z-10 border-t border-gray-100 pt-6">
-                <div>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Massa Bibit Awal</p>
-                    <p class="text-xl font-black text-gray-800">{{ $activeCycle->initial_seed_mass }} <span class="text-sm font-medium text-gray-500">gram</span></p>
-                </div>
-                <div>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Total Pakan Masuk</p>
-                    <p class="text-xl font-black text-gray-800">{{ $activeCycle->total_waste_input }} <span class="text-sm font-medium text-gray-500">kg</span></p>
-                </div>
-                <div>
-                    <p class="text-[10px] text-blue-500 font-bold uppercase tracking-wider mb-1">Estimasi Panen (15%)</p>
-                    <p class="text-xl font-black text-blue-600">{{ number_format($activeCycle->total_waste_input * 0.15, 1) }} <span class="text-sm font-medium text-blue-400">kg</span></p>
-                </div>
-                <div>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Suhu / Hum Rata-rata</p>
-                    <p class="text-xl font-black text-gray-800">{{ $avgTemp }}° <span class="text-gray-300">|</span> {{ $avgHum }}%</p>
-                </div>
-            </div>
-        </div>
-    @else
-        <!-- ========================================== -->
-        <!-- BAGIAN 1B: EMPTY STATE (BELUM ADA SIKLUS)  -->
-        <!-- ========================================== -->
-        <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-8 sm:p-12 mb-6 text-center">
-            <div class="w-24 h-24 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-5 shadow-inner">
-                <i class="fa-solid fa-leaf"></i>
-            </div>
-            <h2 class="text-2xl font-black text-gray-800 mb-2">Sistem Sedang Siaga (Standby)</h2>
-            <p class="text-gray-500 max-w-md mx-auto mb-8">Belum ada siklus budidaya yang berjalan. Mulai siklus baru untuk melacak pemberian pakan, memantau pertumbuhan, dan mengestimasi hasil panen.</p>
-            
-            <button onclick="openModal('modalMulai')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 mx-auto">
-                <i class="fa-solid fa-play"></i> Mulai Siklus Baru
-            </button>
         </div>
     @endif
 
@@ -115,29 +108,44 @@
             <table class="w-full text-left border-collapse min-w-[700px]">
                 <thead>
                     <tr class="border-b-2 border-gray-100">
-                        <th class="pb-3 text-xs font-black text-gray-400 uppercase tracking-wider pl-2">ID Siklus</th>
-                        <th class="pb-3 text-xs font-black text-gray-400 uppercase tracking-wider">Durasi</th>
-                        <th class="pb-3 text-xs font-black text-gray-400 uppercase tracking-wider">Sampah Input</th>
-                        <th class="pb-3 text-xs font-black text-gray-400 uppercase tracking-wider">Panen Prepupa</th>
-                        <th class="pb-3 text-xs font-black text-gray-400 uppercase tracking-wider">Kasgot</th>
-                        <th class="pb-3 text-xs font-black text-indigo-500 uppercase tracking-wider">WRI</th>
-                        <th class="pb-3 text-xs font-black text-purple-500 uppercase tracking-wider text-right pr-2">ECI</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Batch ID</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Durasi</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 tracking-wider uppercase">Total Pakan</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 tracking-wider uppercase">Hasil Panen</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 tracking-wider uppercase">Efisiensi Biokonversi (ECI)</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 tracking-wider uppercase">Indeks Biokonversi (WRI)</th>
                     </tr>
                 </thead>
                 <tbody class="text-sm">
                     @forelse($finishedCycles as $fc)
                     <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                        <td class="py-4 pl-2 font-bold text-gray-800">{{ $fc->batch_id }}</td>
-                        <td class="py-4 text-gray-600">{{ $fc->days_elapsed }} Hari</td>
-                        <td class="py-4 text-gray-600">{{ $fc->total_waste_input }} kg</td>
-                        <td class="py-4 font-bold text-gray-800">{{ $fc->harvest_mass }} kg</td>
-                        <td class="py-4 text-gray-600">{{ $fc->residue_mass }} kg</td>
-                        <td class="py-4 font-bold text-indigo-600">{{ number_format($fc->wri_result, 1) }} %/hari</td>
-                        <td class="py-4 text-right pr-2 font-black text-purple-600">{{ number_format($fc->eci_result, 1) }} %</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="font-bold text-gray-800">{{ $fc->batch_id }}</span>
+                        </td>
+                        
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {{ $fc->days_elapsed }} Hari
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
+                            {{ number_format($fc->total_waste_input, 1) }} kg
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
+                            {{ number_format($fc->harvest_mass, 1) }} kg
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-bold text-blue-600">{{ number_format($fc->eci_result, 1) }} %</span>
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-bold text-emerald-600">{{ number_format($fc->wri_result, 1) }} %</span>
+                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="py-8 text-center text-gray-400 text-sm">Belum ada riwayat siklus yang diselesaikan.</td>
+                        <td colspan="6" class="py-8 text-center text-gray-400 text-sm">Belum ada riwayat siklus yang diselesaikan.</td>
                     </tr>
                     @endforelse
                 </tbody>
