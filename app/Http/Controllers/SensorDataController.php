@@ -276,7 +276,7 @@ class SensorDataController extends Controller
     }
 
     // Method Global Alert (AJAX Polling)
-   public function checkAlerts()
+    public function checkAlerts()
     {
         $alerts = [];
         
@@ -285,23 +285,85 @@ class SensorDataController extends Controller
         if ($latestData) {
             $timeStr = $latestData->created_at->format('H:i'); // Ambil waktu sensor
 
-            // Peringatan Suhu Udara Tinggi
-            if ($latestData->temp > 30) {
+            // --- A. PERINGATAN SUHU UDARA ---
+            if ($latestData->temp > config('simaggot.thresholds.temp.max_safe')) {
                 $alerts[] = [
-                    'id' => 'temp_' . $latestData->id, // ID Unik
+                    'id' => 'temp_danger_' . $latestData->id,
                     'type' => 'danger',
-                    'title' => 'Peringatan Suhu Tinggi!',
-                    'message' => "Suhu saat ini mencapai {$latestData->temp}°C. Segera nyalakan kipas exhaust.",
+                    'title' => 'Bahaya Suhu Kritis!',
+                    'message' => "Suhu mencapai {$latestData->temp}°C (Batas fatal >35°C). Segera nyalakan kipas exhaust secara penuh!",
+                    'time' => $timeStr
+                ];
+            } elseif ($latestData->temp > config('simaggot.thresholds.temp.max_ideal')) {
+                $alerts[] = [
+                    'id' => 'temp_warn_high_' . $latestData->id,
+                    'type' => 'warning',
+                    'title' => 'Peringatan Suhu Tinggi',
+                    'message' => "Suhu saat ini {$latestData->temp}°C (Ideal 24-30°C). Masih stabil namun pantau ventilasi udara.",
+                    'time' => $timeStr
+                ];
+            } elseif ($latestData->temp < config('simaggot.thresholds.temp.min_ideal')) {
+                $alerts[] = [
+                    'id' => 'temp_warn_low_' . $latestData->id,
+                    'type' => 'warning',
+                    'title' => 'Suhu Terlalu Rendah',
+                    'message' => "Suhu udara turun ke {$latestData->temp}°C. Aktivitas dan metabolisme larva berpotensi menurun.",
                     'time' => $timeStr
                 ];
             }
-            // Peringatan Amonia Beracun
-            if ($latestData->ammonia > 20) {
+
+            // --- B. PERINGATAN KELEMBAPAN UDARA (RH) ---
+            if ($latestData->hum > config('simaggot.thresholds.hum.max_ideal')) {
                 $alerts[] = [
-                    'id' => 'nh3_' . $latestData->id,
+                    'id' => 'hum_high_' . $latestData->id,
+                    'type' => 'warning',
+                    'title' => 'Udara Terlalu Lembap',
+                    'message' => "Kelembapan udara mencapai {$latestData->hum}% (Batas ideal <80%). Sirkulasi udara perlu ditingkatkan.",
+                    'time' => $timeStr
+                ];
+            } elseif ($latestData->hum < config('simaggot.thresholds.hum.min_ideal')) {
+                $alerts[] = [
+                    'id' => 'hum_low_' . $latestData->id,
+                    'type' => 'warning',
+                    'title' => 'Udara Terlalu Kering',
+                    'message' => "Kelembapan udara hanya {$latestData->hum}% (Batas ideal >60%). Pertimbangkan menyalakan mist maker.",
+                    'time' => $timeStr
+                ];
+            }
+
+            // --- C. PERINGATAN KELEMBAPAN MEDIA ---
+            $soilArray = is_array($latestData->soil) ? $latestData->soil : json_decode($latestData->soil, true) ?? [];
+            if (count($soilArray) > 0) {
+                // Hitung rata-rata kelembapan media dari seluruh rak
+                $avgSoil = array_sum($soilArray) / count($soilArray);
+                $avgSoilFormat = number_format($avgSoil, 1);
+
+                if ($avgSoil > config('simaggot.thresholds.soil.max_safe')) {
+                    $alerts[] = [
+                        'id' => 'soil_danger_' . $latestData->id,
+                        'type' => 'danger',
+                        'title' => 'Media Terlalu Basah!',
+                        'message' => "Kelembapan media rata-rata {$avgSoilFormat}% (Batas >90%). Berisiko menghambat pertumbuhan larva.",
+                        'time' => $timeStr
+                    ];
+                } elseif ($avgSoil < config('simaggot.thresholds.soil.min_safe')) {
+                    $alerts[] = [
+                        'id' => 'soil_warn_' . $latestData->id,
+                        'type' => 'warning',
+                        'title' => 'Media Terlalu Kering',
+                        'message' => "Kelembapan media rata-rata {$avgSoilFormat}% (Batas aman >60%). Tambahkan pakan basah atau air.",
+                        'time' => $timeStr
+                    ];
+                }
+            }
+
+            // --- D. PERINGATAN AMONIA ---
+            if ($latestData->ammonia > config('simaggot.thresholds.ammonia.max_safe')) {
+                $alerts[] = [
+                    'id' => 'nh3_danger_' . $latestData->id,
                     'type' => 'danger',
-                    'title' => 'Bahaya Amonia!',
-                    'message' => "Kadar amonia mencapai {$latestData->ammonia} ppm. Lingkungan beracun bagi maggot.",
+                    'title' => 'Bahaya Amonia Beracun!',
+                    'message' => "Kadar amonia mencapai {$latestData->ammonia} PPM (Batas aman ≤20 PPM). Lingkungan beracun bagi maggot!",
                     'time' => $timeStr
                 ];
             }
