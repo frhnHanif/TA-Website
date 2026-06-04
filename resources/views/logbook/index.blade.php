@@ -113,11 +113,11 @@
                             <td class="py-4 text-gray-600">{{ $log->temp }} °C</td>
                             <td class="py-4 text-gray-600">{{ $log->hum }} %</td>
                             <td class="py-4 text-gray-600">{{ number_format($avgSoil, 1) }} %</td>
-                            <td class="py-4">
-                                <span class="px-2.5 py-1 text-xs font-bold rounded-lg {{ $log->ammonia > 30 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
-                                    {{ $log->ammonia }} ppm
-                                </span>
-                            </td>
+                            <td class="py-3">
+                                        <span class="px-2 py-1 text-[10px] font-bold rounded-md {{ $log->ammonia > config('simaggot.thresholds.ammonia.max_safe') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
+                                            {{ $log->ammonia }} ppm
+                                        </span>
+                                    </td>
                             <td class="py-4 text-right pr-2 font-bold text-gray-700">
                                 {{ number_format($totalBerat, 2) }} kg
                             </td>
