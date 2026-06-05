@@ -286,7 +286,7 @@ class SensorDataController extends Controller
             $timeStr = $latestData->created_at->format('H:i'); // Ambil waktu sensor
 
             // --- A. PERINGATAN SUHU UDARA ---
-            if ($latestData->temp > config('simaggot.thresholds.temp.max_safe')) {
+            if ($latestData->temp > config('maggot.thresholds.temp.max_safe')) {
                 $alerts[] = [
                     'id' => 'temp_danger_' . $latestData->id,
                     'type' => 'danger',
@@ -294,7 +294,7 @@ class SensorDataController extends Controller
                     'message' => "Suhu mencapai {$latestData->temp}°C (Batas fatal >35°C). Segera nyalakan kipas exhaust secara penuh!",
                     'time' => $timeStr
                 ];
-            } elseif ($latestData->temp > config('simaggot.thresholds.temp.max_ideal')) {
+            } elseif ($latestData->temp > config('maggot.thresholds.temp.max_ideal')) {
                 $alerts[] = [
                     'id' => 'temp_warn_high_' . $latestData->id,
                     'type' => 'warning',
@@ -302,7 +302,7 @@ class SensorDataController extends Controller
                     'message' => "Suhu saat ini {$latestData->temp}°C (Ideal 24-30°C). Masih stabil namun pantau ventilasi udara.",
                     'time' => $timeStr
                 ];
-            } elseif ($latestData->temp < config('simaggot.thresholds.temp.min_ideal')) {
+            } elseif ($latestData->temp < config('maggot.thresholds.temp.min_ideal')) {
                 $alerts[] = [
                     'id' => 'temp_warn_low_' . $latestData->id,
                     'type' => 'warning',
@@ -313,7 +313,7 @@ class SensorDataController extends Controller
             }
 
             // --- B. PERINGATAN KELEMBAPAN UDARA (RH) ---
-            if ($latestData->hum > config('simaggot.thresholds.hum.max_ideal')) {
+            if ($latestData->hum > config('maggot.thresholds.hum.max_ideal')) {
                 $alerts[] = [
                     'id' => 'hum_high_' . $latestData->id,
                     'type' => 'warning',
@@ -321,7 +321,7 @@ class SensorDataController extends Controller
                     'message' => "Kelembapan udara mencapai {$latestData->hum}% (Batas ideal <80%). Sirkulasi udara perlu ditingkatkan.",
                     'time' => $timeStr
                 ];
-            } elseif ($latestData->hum < config('simaggot.thresholds.hum.min_ideal')) {
+            } elseif ($latestData->hum < config('maggot.thresholds.hum.min_ideal')) {
                 $alerts[] = [
                     'id' => 'hum_low_' . $latestData->id,
                     'type' => 'warning',
@@ -338,7 +338,7 @@ class SensorDataController extends Controller
                 $avgSoil = array_sum($soilArray) / count($soilArray);
                 $avgSoilFormat = number_format($avgSoil, 1);
 
-                if ($avgSoil > config('simaggot.thresholds.soil.max_safe')) {
+                if ($avgSoil > config('maggot.thresholds.soil.max_safe')) {
                     $alerts[] = [
                         'id' => 'soil_danger_' . $latestData->id,
                         'type' => 'danger',
@@ -346,7 +346,7 @@ class SensorDataController extends Controller
                         'message' => "Kelembapan media rata-rata {$avgSoilFormat}% (Batas >90%). Berisiko menghambat pertumbuhan larva.",
                         'time' => $timeStr
                     ];
-                } elseif ($avgSoil < config('simaggot.thresholds.soil.min_safe')) {
+                } elseif ($avgSoil < config('maggot.thresholds.soil.min_safe')) {
                     $alerts[] = [
                         'id' => 'soil_warn_' . $latestData->id,
                         'type' => 'warning',
@@ -358,7 +358,7 @@ class SensorDataController extends Controller
             }
 
             // --- D. PERINGATAN AMONIA ---
-            if ($latestData->ammonia > config('simaggot.thresholds.ammonia.max_safe')) {
+            if ($latestData->ammonia > config('maggot.thresholds.ammonia.max_safe')) {
                 $alerts[] = [
                     'id' => 'nh3_danger_' . $latestData->id,
                     'type' => 'danger',

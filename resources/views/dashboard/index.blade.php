@@ -48,12 +48,12 @@
 
             <!-- Amonia -->
             <div class="bg-white rounded-[1.5rem] shadow-sm p-5 border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-                <div class="w-12 h-12 rounded-full {{ $latestData->ammonia > config('simaggot.thresholds.ammonia.max_safe') ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-500' }} flex items-center justify-center text-xl shrink-0">
+                <div class="w-12 h-12 rounded-full {{ $latestData->ammonia > config('maggot.thresholds.ammonia.max_safe') ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-500' }} flex items-center justify-center text-xl shrink-0">
                     <i class="fa-solid fa-biohazard"></i>
                 </div>
                 <div>
                     <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">Amonia</p>
-                    <p class="text-2xl font-black {{ $latestData->ammonia > config('simaggot.thresholds.ammonia.max_safe') ? 'text-red-600' : 'text-gray-800' }}">{{ $latestData->ammonia }} <span class="text-sm font-medium text-gray-500">ppm</span></p>
+                    <p class="text-2xl font-black {{ $latestData->ammonia > config('maggot.thresholds.ammonia.max_safe') ? 'text-red-600' : 'text-gray-800' }}">{{ $latestData->ammonia }} <span class="text-sm font-medium text-gray-500">ppm</span></p>
                 </div>
             </div>
 
