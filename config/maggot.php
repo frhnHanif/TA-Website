@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'admin_pin' => env('ADMIN_PIN'),
     'thresholds' => [
         // Suhu Udara
         'temp' => [
