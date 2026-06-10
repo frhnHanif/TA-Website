@@ -154,7 +154,19 @@ class SensorDataController extends Controller
         // Ambil data sensor terbaru untuk panduan manual override
         $latestData = SensorData::latest()->first(); 
         
-        return view('control.index', compact('control', 'latestData'));
+        $isLockedByOthers = false;
+        $lockMessage = "";
+
+        // Cek apakah sistem sedang dikunci oleh orang lain
+        if ($control->is_manual && $control->controlled_by && $control->locked_until && $control->locked_until->isFuture()) {
+            // Jika yang mengunci BUKAN user yang sedang login saat ini
+            if ($control->controlled_by !== auth()->id()) {
+                $isLockedByOthers = true;
+                $lockMessage = "Akses terkunci! Pengelola bernama <strong>" . $control->controllerUser->name . "</strong> sedang mengendalikan sistem ini secara manual hingga pukul " . $control->locked_until->format('H:i') . " WIB.";
+            }
+        }
+        
+        return view('control.index', compact('control', 'latestData', 'isLockedByOthers', 'lockMessage'));
     }
 
     // 4. Halaman Statistik & Analitik
@@ -254,52 +266,93 @@ class SensorDataController extends Controller
     public function updateControl(Request $request)
     {
         $control = DeviceControl::first();
+        $currentUser = auth()->id();
+        $now = now();
         $isUpdated = false; // Flag untuk mengecek apakah benar-benar ada data yang diproses
 
-        // Tangkap perubahan Mode (Manual/Auto)
+        // =========================================================================
+        // VALIDASI PROTEKSI CONCURRENCY LOCKING
+        // =========================================================================
+        // Cek apakah sistem dalam mode manual dan sedang dikunci oleh orang lain
+        if ($control->is_manual && $control->controlled_by && $control->locked_until && $control->locked_until->isFuture()) {
+            if ($control->controlled_by !== $currentUser) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal! Sistem sedang dikunci dan dikendalikan secara manual oleh pengelola lain.'
+                ], 403);
+            }
+        }
+
+        // =========================================================================
+        // PROCESS REQUEST DATA
+        // =========================================================================
+        
+        // 1. Tangkap perubahan Mode (Manual/Auto)
         if ($request->has('is_manual')) {
-            $control->is_manual = $request->boolean('is_manual'); // Gunakan boolean agar lebih ketat (terima true/false, 1/0)
+            $control->is_manual = $request->boolean('is_manual');
             $isUpdated = true;
+            
+            if ($control->is_manual) {
+                // Jika diubah ke MANUAL, langsung kunci hak akses untuk user ini selama 5 menit
+                $control->controlled_by = $currentUser;
+                $control->locked_until = $now->addMinutes(5);
+            } else {
+                // Jika dikembalikan ke OTOMATIS, lepas kunci dari database
+                $control->controlled_by = null;
+                $control->locked_until = null;
+            }
         }
 
-        // Jika user menggeser slider kipas
-        if ($request->has('fan')) {
-            $control->fan = (int) $request->fan;
-            $isUpdated = true;
+        // 2. Pembaruan Atribut Aktuator (Hanya diproses jika sistem dalam Mode MANUAL)
+        if ($control->is_manual) {
+            
+            // Otomatis perpanjang masa berlaku kunci (+5 menit dari aksi terakhir)
+            $control->controlled_by = $currentUser;
+            $control->locked_until = $now->addMinutes(5);
+
+            // Jika user menggeser/menekan tingkat kecepatan kipas
+            if ($request->has('fan')) {
+                $control->fan = (int) $request->fan;
+                $isUpdated = true;
+            }
+
+            // --- LOGIKA MIST MAKER ---
+            // Skenario A: Jika menerima satu array penuh (Bagus untuk test Postman / sinkronisasi massal)
+            if ($request->has('mist') && is_array($request->mist)) {
+                $control->mist = $request->mist;
+                $isUpdated = true;
+            } 
+            // Skenario B: Jika menerima update satuan dari tombol Web (mist_index & mist_value)
+            elseif ($request->has('mist_index') && $request->has('mist_value')) {
+                $mistArray = is_array($control->mist) ? $control->mist : json_decode($control->mist, true);
+                $mistArray[$request->mist_index] = (int) $request->mist_value;
+                $control->mist = $mistArray;
+                $isUpdated = true;
+            }
         }
 
-        // --- LOGIKA MIST MAKER DIPERBARUI ---
-        // Skenario A: Jika menerima satu array penuh (Bagus untuk test Postman / sinkronisasi ESP32)
-        if ($request->has('mist') && is_array($request->mist)) {
-            $control->mist = $request->mist;
-            $isUpdated = true;
-        } 
-        // Skenario B: Jika menerima update satuan dari tombol Web (mist_index & mist_value)
-        elseif ($request->has('mist_index') && $request->has('mist_value')) {
-            $mistArray = is_array($control->mist) ? $control->mist : json_decode($control->mist, true);
-            $mistArray[$request->mist_index] = (int) $request->mist_value;
-            $control->mist = $mistArray;
-            $isUpdated = true;
-        }
-
-        // Jika ada perubahan, simpan dan berikan response sukses
+        // =========================================================================
+        // SAVE & RESPONSE INTERACTION
+        // =========================================================================
         if ($isUpdated) {
             $control->save();
             return response()->json([
                 'status' => 'success',
                 'message' => 'Status berhasil diupdate!',
+                'locked_until' => $control->locked_until ? $control->locked_until->format('H:i') : null,
                 'data_tersimpan' => [
                     'is_manual' => $control->is_manual,
                     'fan' => $control->fan,
-                    'mist' => $control->mist
+                    'mist' => $control->mist,
+                    'controlled_by' => $control->controlled_by
                 ]
             ]);
         }
 
-        // Jika tidak ada key yang cocok, berikan response error 400 Bad Request
+        // Jika tidak ada key data yang cocok atau mencoba merubah aktuator saat mode otomatis aktif
         return response()->json([
             'status' => 'error',
-            'message' => 'Tidak ada data yang valid untuk diupdate. Pastikan key JSON sesuai.'
+            'message' => 'Tidak ada data valid yang diproses. Pastikan key JSON sesuai dan sistem berada dalam mode MANUAL.'
         ], 400);
     }
 

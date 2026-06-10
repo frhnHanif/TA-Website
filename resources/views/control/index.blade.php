@@ -5,7 +5,7 @@
 @section('content')
 
 @php
-    // Mengambil data sensor terbaru langsung di View
+    // Mengambil data sensor terbaru langsung di View untuk panduan monitoring
     $latestData = \App\Models\SensorData::latest()->first();
     $temp = $latestData ? $latestData->temp : '--';
     $hum = $latestData ? $latestData->hum : '--';
@@ -27,14 +27,37 @@
         </div>
     @endif
 
-    <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 mb-6 flex justify-between items-center">
+    @if($isLockedByOthers)
+        <div class="bg-amber-50 border border-amber-200 text-amber-800 px-6 py-4 rounded-2xl mb-6 flex items-start gap-4 shadow-sm animate-pulse">
+            <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0 text-lg">
+                <i class="fa-solid fa-user-lock"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-base">Akses Kontrol Terkunci</h4>
+                <p class="text-sm mt-1">{!! $lockMessage !!}</p>
+                <p class="text-[11px] text-amber-600 font-medium mt-2">*Kunci akan terbuka otomatis jika akun tersebut tidak melakukan aktivitas perubahan kontrol selama 5 menit atau mengembalikan sistem ke mode otomatis.</p>
+            </div>
+        </div>
+    @endif
+
+    <div id="autoAlert" class="bg-blue-50 border border-blue-200 text-blue-700 px-6 py-4 rounded-2xl mb-6 flex items-start gap-4 {{ $control->is_manual ? 'hidden' : 'flex' }}">
+        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0 text-lg">
+            <i class="fa-solid fa-robot"></i>
+        </div>
+        <div>
+            <h4 class="font-bold">Sistem Berjalan Otomatis (Fuzzy Logic)</h4>
+            <p class="text-sm mt-0.5">Saat ini ESP32 mengendalikan aktuator secara mandiri berdasarkan algoritma fuzzy data sensor. Anda harus mengubah sakelar ke mode <strong class="text-red-600">MANUAL</strong> terlebih dahulu untuk mengambil alih kontrol.</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 mb-6 flex justify-between items-center {{ $isLockedByOthers ? 'opacity-50 pointer-events-none select-none' : '' }}">
         <div>
             <h2 class="text-xl font-bold text-gray-800">Mode Operasional</h2>
-            <p class="text-xs text-gray-500 mt-1">Tentukan siapa yang mengambil alih kendali aktuator.</p>
+            <p class="text-xs text-gray-500 mt-1">Tentukan siapa yang mengambil alih kendali penuh aktuator.</p>
         </div>
         
         <label class="relative inline-flex items-center cursor-pointer select-none">
-            <input type="checkbox" id="modeSwitch" class="sr-only peer" {{ $control->is_manual ? 'checked' : '' }} onchange="toggleMode()">
+            <input type="checkbox" id="modeSwitch" class="sr-only peer" {{ $control->is_manual ? 'checked' : '' }} onchange="toggleMode()" {{ $isLockedByOthers ? 'disabled' : '' }}>
             <div class="w-14 h-7 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-500"></div>
             <span class="ml-3 text-sm sm:text-base font-black tracking-wider w-24 {{ $control->is_manual ? 'text-red-500' : 'text-gray-400' }}" id="modeLabel">
                 {{ $control->is_manual ? 'MANUAL' : 'OTOMATIS' }}
@@ -42,15 +65,7 @@
         </label>
     </div>
 
-    <div id="autoAlert" class="bg-blue-50 border border-blue-200 text-blue-700 px-6 py-4 rounded-2xl mb-6 flex items-start gap-4 {{ $control->is_manual ? 'hidden' : 'flex' }}">
-        <i class="fa-solid fa-robot text-2xl mt-1"></i>
-        <div>
-            <h4 class="font-bold">Sistem Berjalan Otomatis (Fuzzy Logic)</h4>
-            <p class="text-sm mt-1">Saat ini ESP32 mengendalikan aktuator secara mandiri berdasarkan data sensor. Anda tidak dapat menekan tombol di bawah sebelum mengubah sakelar ke mode <strong>MANUAL</strong>.</p>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 {{ ($isLockedByOthers || !$control->is_manual) ? 'opacity-50 pointer-events-none select-none' : '' }}">
         
         <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 relative overflow-hidden flex flex-col">
             <div class="flex items-center gap-3 mb-5">
@@ -59,11 +74,11 @@
                 </div>
                 <div>
                     <h3 class="font-bold text-gray-800">Kipas Exhaust</h3>
-                    <p class="text-xs text-gray-500">Kendalikan kecepatan motor</p>
+                    <p class="text-xs text-gray-500">Kendalikan kecepatan putaran motor (Sinyal PWM)</p>
                 </div>
             </div>
 
-            <div class="flex gap-3 mb-5">
+            <div class="flex gap-3 mb-6">
                 <div class="flex-1 bg-amber-50/50 rounded-xl p-3 border border-amber-100 flex items-center gap-3">
                     <i class="fa-solid fa-temperature-half text-amber-500 text-lg"></i>
                     <div>
@@ -95,21 +110,21 @@
                 
                 @foreach($fanLevels as $level)
                     @php
-                        // Margin error 25 PWM
+                        // Deteksi tombol aktif dengan batas toleransi rentang PWM
                         $isActive = abs($currentFan - $level['val']) <= 25;
                     @endphp
                     <button type="button" 
                         onclick="sendFanData({{ $level['val'] }})"
                         data-val="{{ $level['val'] }}"
                         class="fan-btn relative py-3 rounded-xl border-2 font-bold transition-all text-xs
-                        {{ !$control->is_manual ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50 text-gray-400' : 
+                        {{ ($isLockedByOthers || !$control->is_manual) ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50 text-gray-400' : 
                             ($isActive ? 'border-gray-800 bg-gray-800 text-white shadow-md active-fan' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400') }}"
-                        {{ !$control->is_manual ? 'disabled' : '' }}>
+                        {{ ($isLockedByOthers || !$control->is_manual) ? 'disabled' : '' }}>
                         {{ $level['label'] }}
                     </button>
                 @endforeach
             </div>
-            <p class="text-[10px] text-center text-gray-400 mt-4">*Sistem mengirim nilai PWM (0-255) ke ESP32.</p>
+            <p class="text-[10px] text-center text-gray-400 mt-4">*Sistem mengonversi tingkatan ke format data PWM dinamis (0-255) untuk register mikroprosesor ESP32.</p>
         </div>
 
         <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 flex flex-col">
@@ -118,8 +133,8 @@
                     <i class="fa-solid fa-cloud-showers-water"></i>
                 </div>
                 <div>
-                    <h3 class="font-bold text-gray-800">Mist Maker Rak</h3>
-                    <p class="text-xs text-gray-500">Nyalakan/Matikan pelembap substrat secara manual</p>
+                    <h3 class="font-bold text-gray-800">Mist Maker Substrat</h3>
+                    <p class="text-xs text-gray-500">Nyalakan pelembap media secara manual per rak biopond</p>
                 </div>
             </div>
 
@@ -130,15 +145,15 @@
                 
                 @foreach($mistArray as $index => $val)
                     @php 
-                        $isOn = $val > 0; // Apapun angkanya (misal 10), selama > 0 dianggap ON
+                        $isOn = $val === 10; 
                         $soilMoisture = isset($soilData[$index]) ? rtrim(rtrim(number_format((float)$soilData[$index], 1), '0'), '.') : '--';
                     @endphp
                     <button type="button" 
                         id="btn-mist-{{ $index }}"
                         onclick="toggleMist({{ $index }}, {{ $val }})"
-                        {{ !$control->is_manual ? 'disabled' : '' }}
+                        {{ ($isLockedByOthers || !$control->is_manual) ? 'disabled' : '' }}
                         class="relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all 
-                        {{ !$control->is_manual ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50 text-gray-400' : 
+                        {{ ($isLockedByOthers || !$control->is_manual) ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50 text-gray-400' : 
                             ($isOn ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-sm' : 'border-gray-200 bg-white text-gray-600 hover:border-blue-300') }}">
                         
                         <span class="text-[11px] font-black uppercase tracking-wider mb-1">Rak {{ $index + 1 }}</span>
@@ -153,9 +168,10 @@
                     </button>
                 @endforeach
             </div>
+
             <div class="mt-4 bg-red-50 border border-red-100 p-3 rounded-xl text-center">
-                <p class="text-[10px] text-red-600 font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Peringatan:</p>
-                <p class="text-[10px] text-red-500 mt-0.5">Jangan lupa matikan kembali (OFF) agar media rak tidak kebanjiran.</p>
+                <p class="text-[10px] text-red-600 font-bold flex items-center justify-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> Peringatan Sistem:</p>
+                <p class="text-[10px] text-red-500 mt-0.5">Sistem berjalan tanpa timer internal otomatis. Pastikan mematikan kembali sakelar (OFF) setelah kelembapan media optimal tercapai.</p>
             </div>
         </div>
 
@@ -167,7 +183,7 @@
 <script>
     let isManualMode = {{ $control->is_manual ? 'true' : 'false' }};
 
-    // Aksi 1: Ubah Mode Manual/Otomatis
+    // Aksi 1: Modifikasi Status Pintu Gerbang Mode Operasional
     function toggleMode() {
         let checkbox = document.getElementById('modeSwitch');
         isManualMode = checkbox.checked;
@@ -176,10 +192,11 @@
         });
     }
 
-    // Aksi 2: Kirim Data Kipas via Tombol
+    // Aksi 2: Pembaruan Sinyal PWM Kipas
     function sendFanData(pwmValue) {
         if (!isManualMode) return;
         
+        // Optimistic UI Update untuk barisan tombol kipas
         document.querySelectorAll('.fan-btn').forEach(btn => {
             let btnVal = parseInt(btn.getAttribute('data-val'));
             if (Math.abs(pwmValue - btnVal) <= 25) {
@@ -189,6 +206,7 @@
             }
         });
 
+        // Kontrol rotasi ikon kipas animasi
         let icon = document.getElementById('fanIcon');
         if(pwmValue > 0) {
             icon.classList.add('fa-spin');
@@ -199,32 +217,32 @@
         sendToServer({ fan: pwmValue });
     }
 
-    // Aksi 3: Klik Tombol Mist Maker (State Toggle 10 atau 0)
+    // Aksi 3: Sakelar State Mist Maker (Kirim Nilai Mutlak 10 atau 0)
     function toggleMist(index, currentVal) {
         if (!isManualMode) return;
 
-        // LOGIKA BARU: Jika saat ini ON (>0), maka kirim 0 (Matikan). 
-        // Jika saat ini OFF (0), maka kirim 10 (Nyalakan).
-        let sendValue = (currentVal > 0) ? 0 : 10; 
+        // Logika Pengkondisian Sakelar
+        let sendValue;
+        if (currentVal === 0) {
+            sendValue = 10; // Jika saat ini status OFF (0) -> Ubah menjadi ON (10)
+        } else {
+            sendValue = 0;  // Jika saat ini status ON (10) -> Ubah menjadi OFF (0)
+        }
 
-        // Kirim ke server
         sendToServer({ mist_index: index, mist_value: sendValue }, function() {
-            // Optimistic Update UI
+            // Optimistic UI Update untuk elemen Tombol Rak Mist Maker
             let btn = document.getElementById('btn-mist-' + index);
             let badge = document.getElementById('badge-mist-' + index);
             let soilInfo = document.getElementById('soil-info-' + index);
             
-            // Perbarui parameter onClick agar tombol bisa ditekan bolak-balik
             btn.setAttribute('onclick', `toggleMist(${index}, ${sendValue})`);
             
-            if (sendValue > 0) {
-                // Tampilan ON
+            if (sendValue === 10) {
                 btn.className = "relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all border-blue-500 bg-blue-50 text-blue-600 shadow-sm";
                 badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-200 text-blue-800";
                 badge.innerText = "ON";
                 soilInfo.className = "flex items-center gap-1 text-[10px] font-bold mb-2 text-blue-500";
             } else {
-                // Tampilan OFF
                 btn.className = "relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all border-gray-200 bg-white text-gray-600 hover:border-blue-300";
                 badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-gray-200 text-gray-500";
                 badge.innerText = "OFF";
@@ -233,7 +251,7 @@
         });
     }
 
-    // Fungsi Utama AJAX (Kirim ke Laravel)
+    // Jembatan Komunikasi Utama AJAX Fetch API ke Laravel Backend
     function sendToServer(payload, onSuccess = null) {
         fetch('/web-control', {
             method: 'POST',
@@ -243,14 +261,20 @@
             },
             body: JSON.stringify(payload)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 403) {
+                alert('Akses Ditolak! Sistem telah dikunci oleh pengelola lain.');
+                location.reload();
+                throw new Error('Locked by another user');
+            }
+            return response.json();
+        })
         .then(data => {
-            console.log('Success:', data);
+            console.log('Server Integration Success:', data);
             if(onSuccess) onSuccess();
         })
         .catch((error) => {
-            console.error('Error:', error);
-            alert('Gagal mengirim data ke server. Periksa koneksi internet Anda.');
+            console.error('Network or Guard Error:', error);
         });
     }
 </script>

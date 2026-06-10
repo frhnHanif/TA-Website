@@ -14,11 +14,20 @@ class DeviceControl extends Model
         'is_manual',
         'mist',
         'fan',
+        'controlled_by',
+        'locked_until'
     ];
 
     // Memberi tahu Laravel bahwa 'mist' harus diperlakukan sebagai Array
     protected $casts = [
         'mist' => 'array',
         'is_manual' => 'boolean',
+        'locked_until' => 'datetime',
     ];
+
+    // Relasi untuk mengetahui nama pengelola yang sedang mengunci
+    public function controllerUser()
+    {
+        return $this->belongsTo(User::class, 'controlled_by');
+    }
 }
