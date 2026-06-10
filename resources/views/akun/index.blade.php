@@ -126,7 +126,23 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
+
+                <div class="bg-red-50/50 p-5 sm:p-6 rounded-2xl border border-red-100 mt-8">
+                    <h3 class="text-xs font-bold text-red-600 mb-4 uppercase tracking-wider"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Pengaturan Darurat</h3>
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-800">Paksa Buka Kunci Aktuator</h4>
+                            <p class="text-xs text-gray-500 mt-1 max-w-2xl">Gunakan fitur ini hanya jika tombol kontrol di web membeku atau terjadi error pada sistem penguncian sesi. Tombol ini akan mereset paksa perangkat keras dan web kembali ke mode OTOMATIS.</p>
+                        </div>
+                        <form action="/configuration-panel/force-unlock" method="POST" class="shrink-0 w-full sm:w-auto">
+                            @csrf
+                            <button type="submit" class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-sm flex justify-center items-center gap-2" onclick="return confirm('Apakah Anda yakin ingin memaksa sistem ke mode OTOMATIS dan menghapus semua kunci akses?')">
+                                <i class="fa-solid fa-unlock-keyhole"></i> Force Unlock
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                </div>
         </div>
 
         <div id="editModal" class="fixed inset-0 z-50 bg-gray-900/40 hidden items-center justify-center backdrop-blur-sm p-4 transition-all">

@@ -111,6 +111,19 @@ Route::prefix('configuration-panel')->group(function () {
         App\Models\User::findOrFail($id)->delete();
         return back()->with('success', 'Akun berhasil dihapus!');
     });
+
+    Route::post('/force-unlock', function () {
+    if (!session('admin_unlocked')) abort(403);
+    
+    $control = \App\Models\DeviceControl::first();
+    $control->update([
+        'is_manual' => false,
+        'controlled_by' => null,
+        'locked_until' => null
+    ]);
+    
+    return back()->with('success', 'Sistem telah dibuka paksa ke mode OTOMATIS!');
+    });
 });
 
 require __DIR__.'/auth.php'; // Ini bawaan Laravel Breeze untuk route login/logout
