@@ -20,8 +20,10 @@ class DeviceControl extends Model
 
     // Memberi tahu Laravel bahwa 'mist' harus diperlakukan sebagai Array
     protected $casts = [
-        'mist' => 'array',
         'is_manual' => 'boolean',
+        'fan' => 'integer',               // Paksa selalu jadi angka
+        'controlled_by' => 'integer',     // Paksa selalu jadi angka
+        'mist' => 'array',
         'locked_until' => 'datetime',
     ];
 

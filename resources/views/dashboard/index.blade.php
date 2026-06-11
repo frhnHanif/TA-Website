@@ -82,7 +82,6 @@
                 <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 sm:gap-6">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center text-xl shrink-0">
-                            <!-- Efek animasi putar lambat (fa-spin diganti agar tidak memusingkan) -->
                             <i class="fa-solid fa-arrows-spin fa-spin" style="animation-duration: 3s;"></i>
                         </div>
                         <div>
@@ -124,6 +123,51 @@
             @endif
         </a>
         @endauth
+
+        @guest
+        <div class="block bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-5 sm:p-6 mb-6">
+            @if(isset($activeCycle) && $activeCycle)
+                <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 sm:gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center text-xl shrink-0">
+                            <i class="fa-solid fa-arrows-spin fa-spin" style="animation-duration: 3s;"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Siklus Aktif: {{ $activeCycle->batch_id }}</h3>
+                            <p class="text-xs text-gray-400 mt-1 font-bold flex items-center gap-1">
+                                <i class="fa-solid fa-lock text-[10px]"></i> Live Progress (Hanya Pantau)
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full md:flex-1 md:max-w-md mt-2 md:mt-0">
+                        <div class="flex justify-between text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">
+                            <span>Hari ke-{{ $activeCycle->days_elapsed }}</span>
+                            @php $progress = min(100, ($activeCycle->days_elapsed / 21) * 100); @endphp
+                            <span class="text-amber-600">{{ round($progress) }}% (Target 21 Hari)</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                            <div class="bg-gradient-to-r from-amber-400 to-amber-500 h-full rounded-full transition-all duration-1000" style="width: {{ $progress }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            @else
+                <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center text-xl shrink-0">
+                            <i class="fa-solid fa-power-off"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Sistem Standby (Tidak Ada Siklus)</h3>
+                            <p class="text-xs text-gray-400 mt-1 font-bold flex items-center gap-1">
+                                <i class="fa-solid fa-lock text-[10px]"></i> Menunggu pengelola memulai siklus baru
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
+        @endguest
 
         <!-- ========================================== -->
         <!-- BAGIAN 2: DETAIL BIOPOND (MIDDLE)          -->
