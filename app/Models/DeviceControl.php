@@ -17,7 +17,8 @@ class DeviceControl extends Model
         'mist_stop_at',
         'fan',
         'controlled_by',
-        'locked_until'
+        'locked_until',
+        'last_ping_at'
     ];
 
     // Memberi tahu Laravel bahwa 'mist' harus diperlakukan sebagai Array
@@ -29,6 +30,7 @@ class DeviceControl extends Model
         'mist' => 'array',
         'mist_stop_at' => 'array',
         'locked_until' => 'datetime',
+        'last_ping_at' => 'datetime',
     ];
 
     // Relasi untuk mengetahui nama pengelola yang sedang mengunci

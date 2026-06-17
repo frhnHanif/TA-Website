@@ -27,6 +27,37 @@
         </div>
     @endif
 
+    @if($isOffline)
+        @php
+            if ($offlineSeconds < 60) {
+                $offlineText = $offlineSeconds . ' detik';
+            } elseif ($offlineSeconds < 3600) {
+                $offlineText = intdiv($offlineSeconds, 60) . ' menit';
+            } else {
+                $jam = intdiv($offlineSeconds, 3600);
+                $menit = intdiv($offlineSeconds % 3600, 60);
+                $offlineText = $jam . ' jam' . ($menit > 0 ? ' ' . $menit . ' menit' : '');
+            }
+        @endphp
+        <div class="bg-red-50 border border-red-300 text-red-800 px-6 py-4 rounded-2xl mb-6 flex items-start gap-4 shadow-sm animate-pulse">
+            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0 text-lg">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-base">Smart Vertical Biopond Offline</h4>
+                <p class="text-sm mt-1">
+                    ESP32 tidak terdeteksi. 
+                    @if($offlineSeconds > 0)
+                        Terakhir terlihat <strong>{{ $offlineText }}</strong> yang lalu.
+                    @else
+                        Belum pernah terhubung sejak sistem dinyalakan.
+                    @endif
+                </p>
+                <p class="text-[11px] text-red-600 font-medium mt-2">*Kontrol manual dinonaktifkan hingga koneksi ESP32 pulih. Sistem berjalan dalam mode OTOMATIS.</p>
+            </div>
+        </div>
+    @endif
+
     @if($isLockedByOthers)
         <div class="bg-amber-50 border border-amber-200 text-amber-800 px-6 py-4 rounded-2xl mb-6 flex items-start gap-4 shadow-sm animate-pulse">
             <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0 text-lg">
@@ -50,14 +81,14 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 mb-6 flex justify-between items-center {{ $isLockedByOthers ? 'opacity-50 pointer-events-none select-none' : '' }}">
+    <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 mb-6 flex justify-between items-center {{ ($isLockedByOthers || $isOffline) ? 'opacity-50 pointer-events-none select-none' : '' }}">
         <div>
             <h2 class="text-xl font-bold text-gray-800">Mode Operasional</h2>
             <p class="text-xs text-gray-500 mt-1">Tentukan siapa yang mengambil alih kendali penuh aktuator.</p>
         </div>
         
         <label class="relative inline-flex items-center cursor-pointer select-none">
-            <input type="checkbox" id="modeSwitch" class="sr-only peer" {{ $control->is_manual ? 'checked' : '' }} onchange="toggleMode()" {{ $isLockedByOthers ? 'disabled' : '' }}>
+            <input type="checkbox" id="modeSwitch" class="sr-only peer" {{ $control->is_manual ? 'checked' : '' }} onchange="toggleMode()" {{ ($isLockedByOthers || $isOffline) ? 'disabled' : '' }}>
             <div class="w-14 h-7 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-500"></div>
             <span class="ml-3 text-sm sm:text-base font-black tracking-wider w-24 {{ $control->is_manual ? 'text-red-500' : 'text-gray-400' }}" id="modeLabel">
                 {{ $control->is_manual ? 'MANUAL' : 'OTOMATIS' }}
@@ -65,7 +96,7 @@
         </label>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 {{ ($isLockedByOthers || !$control->is_manual) ? 'opacity-50 pointer-events-none select-none' : '' }}">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 {{ ($isLockedByOthers || $isOffline || !$control->is_manual) ? 'opacity-50 pointer-events-none select-none' : '' }}">
         
         <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 relative overflow-hidden flex flex-col">
             <div class="flex items-center gap-3 mb-5">
@@ -116,9 +147,9 @@
                         onclick="sendFanData({{ $level['val'] }})"
                         data-val="{{ $level['val'] }}"
                         class="fan-btn relative py-3 rounded-xl border-2 font-bold transition-all text-xs
-                        {{ ($isLockedByOthers || !$control->is_manual) ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50 text-gray-400' : 
+                        {{ ($isLockedByOthers || $isOffline || !$control->is_manual) ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50 text-gray-400' : 
                             ($isActive ? 'border-gray-800 bg-gray-800 text-white shadow-md active-fan' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400') }}"
-                        {{ ($isLockedByOthers || !$control->is_manual) ? 'disabled' : '' }}>
+                        {{ ($isLockedByOthers || $isOffline || !$control->is_manual) ? 'disabled' : '' }}>
                         {{ $level['label'] }}
                     </button>
                 @endforeach
@@ -139,7 +170,7 @@
             </div>
 
             <div class="flex justify-center mb-6">
-                <div class="inline-flex gap-1 bg-gray-100 p-1 rounded-xl select-none {{ ($isLockedByOthers || !$control->is_manual) ? 'opacity-50 pointer-events-none' : '' }}">
+                <div class="inline-flex gap-1 bg-gray-100 p-1 rounded-xl select-none {{ ($isLockedByOthers || $isOffline || !$control->is_manual) ? 'opacity-50 pointer-events-none' : '' }}">
                     <button type="button" onclick="selectDuration(10)" id="duration-btn-10" class="duration-btn px-4 py-1.5 rounded-lg text-xs font-black transition-all bg-gray-800 text-white shadow-sm border border-transparent">10s</button>
                     <button type="button" onclick="selectDuration(30)" id="duration-btn-30" class="duration-btn px-4 py-1.5 rounded-lg text-xs font-black transition-all text-gray-500 hover:text-gray-800 hover:bg-white/50">30s</button>
                     <button type="button" onclick="selectDuration(60)" id="duration-btn-60" class="duration-btn px-4 py-1.5 rounded-lg text-xs font-black transition-all text-gray-500 hover:text-gray-800 hover:bg-white/50">60s</button>
@@ -159,9 +190,9 @@
                     <button type="button" 
                         id="btn-mist-{{ $index }}"
                         onclick="toggleMist({{ $index }}, {{ $val }})"
-                        {{ ($isLockedByOthers || !$control->is_manual) ? 'disabled' : '' }}
+                        {{ ($isLockedByOthers || $isOffline || !$control->is_manual) ? 'disabled' : '' }}
                         class="relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all 
-                        {{ ($isLockedByOthers || !$control->is_manual) ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50 text-gray-400' : 
+                        {{ ($isLockedByOthers || $isOffline || !$control->is_manual) ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50 text-gray-400' : 
                             ($isOn ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-sm' : 'border-gray-200 bg-white text-gray-600 hover:border-blue-300') }}">
                         
                         <span class="text-[11px] font-black uppercase tracking-wider mb-1">Rak {{ $index + 1 }}</span>
@@ -186,6 +217,7 @@
 @push('scripts')
 <script>
     let isManualMode = {{ $control->is_manual ? 'true' : 'false' }};
+    let isOffline = {{ $isOffline ? 'true' : 'false' }};
     
     // Default pilihan waktu aktif (dalam hitungan detik)
     let selectedDuration = 10;
@@ -195,6 +227,11 @@
 
     // Aksi 1: Modifikasi Status Pintu Gerbang Mode Operasional
     function toggleMode() {
+        if (isOffline) {
+            alert('Smart Vertical Biopond sedang offline. Tidak dapat mengubah mode operasional.');
+            location.reload();
+            return;
+        }
         let checkbox = document.getElementById('modeSwitch');
         isManualMode = checkbox.checked;
         sendToServer({ is_manual: isManualMode ? 1 : 0 }, function() {
@@ -204,7 +241,7 @@
 
     // Aksi 2: Pembaruan Sinyal PWM Kipas
     function sendFanData(pwmValue) {
-        if (!isManualMode) return;
+        if (!isManualMode || isOffline) return;
         
         document.querySelectorAll('.fan-btn').forEach(btn => {
             let btnVal = parseInt(btn.getAttribute('data-val'));
@@ -227,7 +264,7 @@
 
     // Fungsi Baru: Mengganti Pilihan Waktu Timer Pompa (Highlight Switcher)
     function selectDuration(seconds) {
-        if (!isManualMode) return;
+        if (!isManualMode || isOffline) return;
         selectedDuration = seconds;
         
         document.querySelectorAll('.duration-btn').forEach(btn => {
@@ -241,7 +278,7 @@
 
     // Aksi 3: Sakelar State Mist Maker dengan Manajemen Timer Kompleks
     function toggleMist(index, currentVal) {
-        if (!isManualMode) return;
+        if (!isManualMode || isOffline) return;
 
         let sendValue = currentVal === 0 ? 10 : 0;
         let duration = selectedDuration;

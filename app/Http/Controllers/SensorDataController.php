@@ -41,6 +41,11 @@ class SensorDataController extends Controller
         // Gunakan with() untuk memuat relasi data User sekaligus (Eager Loading)
         $control = DeviceControl::with('controllerUser')->first();
 
+        // Catat timestamp "last ping" sebagai indikator ESP32 online
+        if ($control) {
+            $control->update(['last_ping_at' => now()]);
+        }
+
         // Panggil evaluasi timer dan fail-safe SEBELUM mengirim ke ESP32
         $control = $this->evaluateSystemState($control);
         
@@ -176,6 +181,19 @@ class SensorDataController extends Controller
         // Evaluasi state saat web direfresh
         $control = $this->evaluateSystemState($control);
 
+        // --- DETEKSI STATUS ONLINE/OFFLINE ESP32 ---
+        $isOffline = false;
+        $offlineSeconds = 0;
+        if (!$control->last_ping_at) {
+            // Belum pernah ping sama sekali
+            $isOffline = true;
+        } else {
+            $offlineSeconds = (int) now()->diffInSeconds($control->last_ping_at, true);
+            if ($offlineSeconds > 30) {
+                $isOffline = true;
+            }
+        }
+
         // Ambil data sensor terbaru untuk panduan manual override
         $latestData = SensorData::latest()->first(); 
         
@@ -205,7 +223,7 @@ class SensorDataController extends Controller
             }
         }
         
-        return view('control.index', compact('control', 'latestData', 'isLockedByOthers', 'lockMessage', 'mistRemaining'));
+        return view('control.index', compact('control', 'latestData', 'isLockedByOthers', 'lockMessage', 'mistRemaining', 'isOffline', 'offlineSeconds'));
     }
 
     // 4. Halaman Statistik & Analitik
@@ -309,6 +327,36 @@ class SensorDataController extends Controller
         $currentUser = auth()->id();
         $now = now();
         $isUpdated = false; // Flag untuk mengecek apakah benar-benar ada data yang diproses
+
+        // =========================================================================
+        // VALIDASI STATUS ONLINE/OFFLINE ESP32
+        // =========================================================================
+        // Cek apakah ESP32 (Smart Vertical Biopond) sedang offline
+        $isOffline = false;
+        if (!$control->last_ping_at) {
+            $isOffline = true;
+        } else {
+            $offlineSeconds = (int) $now->diffInSeconds($control->last_ping_at, true);
+            if ($offlineSeconds > 30) {
+                $isOffline = true;
+            }
+        }
+
+        // Jika ESP32 offline, tolak SEMUA permintaan kontrol manual
+        if ($isOffline && $request->has('is_manual') && $request->boolean('is_manual')) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Smart Vertical Biopond sedang offline. Tidak dapat mengaktifkan mode manual. Periksa koneksi ESP32.'
+            ], 503);
+        }
+
+        // Jika ESP32 offline, tolak perubahan aktuator juga
+        if ($isOffline && ($request->has('fan') || $request->has('mist') || $request->has('mist_index'))) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Smart Vertical Biopond sedang offline. Kontrol manual tidak tersedia.'
+            ], 503);
+        }
 
         // =========================================================================
         // VALIDASI PROTEKSI CONCURRENCY LOCKING
