@@ -310,6 +310,9 @@
     </script>
     @endauth
 
+    <!-- 0. Load Alpine.js & Bootstrap JS (Vite) -->
+    @vite('resources/js/app.js')
+
     <!-- 2. Script Universal (Auto-Refresh untuk Publik & Admin) -->
     <script>
         const autoRefreshPages = ['/', '/statistik', '/logbook']; 

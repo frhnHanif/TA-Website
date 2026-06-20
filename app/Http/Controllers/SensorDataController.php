@@ -107,12 +107,6 @@ class SensorDataController extends Controller
             $query->whereDate('created_at', '<=', $request->end_date);
         }
 
-        // Jika tidak ada filter tanggal, tampilkan default 1 hari terakhir (24 jam)
-        if (!$request->filled('start_date') && !$request->filled('end_date')) {
-            $query->where('created_at', '>=', now()->subDay());
-        }
-
-
         // 2. Logika Pengurutan (Terbaru/Terlama)
         $sort = $request->query('sort', 'desc');
         if ($sort === 'asc') {
@@ -135,8 +129,13 @@ class SensorDataController extends Controller
                 "Expires"             => "0"
             ];
             
-            // Kolom Header Excel
-            $columns = ['Tanggal', 'Waktu', 'Suhu (C)', 'Kelembaban Udara (%)', 'Kelembaban Tanah (Avg %)', 'Amonia (ppm)', 'Total Massa Maggot (kg)'];
+            // Kolom Header Excel — LENGKAP per biopond 1-6
+            $columns = [
+                'Tanggal', 'Waktu', 'Suhu (C)', 'Kelembaban Udara (%)',
+                'Hum Tanah R1 (%)', 'Hum Tanah R2 (%)', 'Hum Tanah R3 (%)', 'Hum Tanah R4 (%)', 'Hum Tanah R5 (%)', 'Hum Tanah R6 (%)',
+                'Massa R1 (g)', 'Massa R2 (g)', 'Massa R3 (g)', 'Massa R4 (g)', 'Massa R5 (g)', 'Massa R6 (g)',
+                'Amonia (ppm)', 'Total Massa Maggot (kg)'
+            ];
             
             $callback = function() use($dataExport, $columns) {
                 $file = fopen('php://output', 'w');
@@ -147,14 +146,14 @@ class SensorDataController extends Controller
                     $totalBerat = array_sum($biopondArray) / 1000;
                     
                     $soilArray = is_array($row->soil) ? $row->soil : json_decode($row->soil, true) ?? [];
-                    $avgSoil = count($soilArray) > 0 ? array_sum($soilArray) / count($soilArray) : 0;
                     
                     fputcsv($file, [
                         $row->created_at->format('d/m/Y'),
                         $row->created_at->format('H:i:s'),
                         $row->temp,
                         $row->hum,
-                        number_format($avgSoil, 1, '.', ''),
+                        $soilArray[0] ?? '', $soilArray[1] ?? '', $soilArray[2] ?? '', $soilArray[3] ?? '', $soilArray[4] ?? '', $soilArray[5] ?? '',
+                        $biopondArray[0] ?? '', $biopondArray[1] ?? '', $biopondArray[2] ?? '', $biopondArray[3] ?? '', $biopondArray[4] ?? '', $biopondArray[5] ?? '',
                         $row->ammonia,
                         number_format($totalBerat, 2, '.', '')
                     ]);

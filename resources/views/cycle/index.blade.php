@@ -48,7 +48,7 @@
                 </div>
                 <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
                     <p class="text-xs text-gray-400 font-medium">Rata-rata Suhu</p>
-                    <p class="text-xl font-bold text-gray-700 mt-1">{{ $avgTemp }} <span class="text-xs font-normal text-gray-400">°C</span></p>
+                    <p class="text-xl font-bold text-gray-700 mt-1">{{ $avgTemp }} <span class="text-xs font-normal text-gray-400">&deg;C</span></p>
                 </div>
                 <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
                     <p class="text-xs text-gray-400 font-medium">Durasi Berjalan</p>
