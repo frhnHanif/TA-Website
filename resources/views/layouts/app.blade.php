@@ -6,23 +6,26 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'SiMaggot Dashboard')</title>
     
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    {{-- Preconnect: buka koneksi lebih awal ke origin eksternal --}}
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://ui-avatars.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: {
-                        primary: '#f59e0b',
-                        background: '#F8F9FA'
-                    }
-                }
-            }
-        }
-    </script>
+    {{-- Font Awesome: non-render-blocking --}}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all';this.onload=null;">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    
+    {{-- Google Fonts: preload + display=swap --}}
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+    
+    {{-- Vite: Tailwind CSS yang sudah di-build (menggantikan CDN ~3MB) --}}
+    @vite('resources/css/app.css')
+    
     <style>
         body { background-color: #F8F9FA; }
         ::-webkit-scrollbar { width: 6px; }
@@ -30,10 +33,12 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         @media (max-width: 640px) {
-        html {
-            font-size: 12px;
+            html { font-size: 12px; }
         }
-        }
+        /* Content-visibility: tunda rendering elemen di bawah fold */
+        .below-fold { content-visibility: auto; contain-intrinsic-size: auto 500px; }
+        /* Placeholder dimensi container chart (halaman statistik) */
+        .chart-container { min-height: 300px; contain: layout style; }
     </style>
 </head>
 <body class="text-gray-800 antialiased font-sans relative">
@@ -99,7 +104,7 @@
 
                 <!-- Tampil Jika Sudah Login -->
                 <div class="flex items-center gap-2 bg-white pr-4 pl-1 py-1 rounded-full border border-gray-200 hover:shadow-sm transition-all group relative cursor-pointer">
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=f59e0b&color=fff&bold=true" alt="Profile" class="w-8 h-8 rounded-full">
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=f59e0b&color=fff&bold=true" alt="Profile" class="w-8 h-8 rounded-full" width="32" height="32">
                     <span class="text-sm font-bold text-gray-700 hidden md:block">{{ Auth::user()->name }}</span>
                     
                     <!-- Dropdown Logout -->
@@ -167,6 +172,7 @@
     <!-- Script Global Alert & Dropdown Khusus Pengelola (Auth) -->
     @auth
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
         // 1. Inisialisasi Data dari Local Storage
         let readAlerts = JSON.parse(localStorage.getItem('siMaggotReadAlerts') || '[]');
         let toastedAlerts = []; // Mencegah pop-up Toast muncul berulang di sesi yang sama
@@ -306,7 +312,8 @@
 
         // Jalankan polling
         setTimeout(fetchAlerts, 2000); 
-        setInterval(fetchAlerts, 60000); 
+        setInterval(fetchAlerts, 60000);
+        }); // END DOMContentLoaded
     </script>
     @endauth
 
@@ -315,6 +322,7 @@
 
     <!-- 2. Script Universal (Auto-Refresh untuk Publik & Admin) -->
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
         const autoRefreshPages = ['/', '/statistik', '/logbook']; 
         const currentPath = window.location.pathname;
 
@@ -336,6 +344,7 @@
                 }
             }, 60000); // Interval Refresh: 1 Menit
         }
+        }); // END DOMContentLoaded
     </script>
 
 </body>

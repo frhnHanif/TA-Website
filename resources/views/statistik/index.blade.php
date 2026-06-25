@@ -3,9 +3,6 @@
 @section('title', 'Statistik & Analitik Lanjutan')
 
 @section('content')
-    <!-- Script ApexCharts -->
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-
     <!-- KPI Cards (Indikator Kinerja Utama) -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between hover:shadow-md transition-shadow">
@@ -54,7 +51,7 @@
             <div id="loader-TempHum" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 hidden flex justify-center items-center rounded-[1.5rem]"><i class="fa-solid fa-spinner fa-spin text-3xl text-primary"></i></div>
             <h3 class="text-lg font-bold text-gray-700 mb-2">Tren Suhu & Kelembaban Udara</h3>
             <p class="text-xs text-gray-400 mb-4" id="desc-TempHum">Pergerakan rata-rata per jam (24 jam terakhir)</p>
-            <div id="chartTempHum"></div>
+            <div id="chartTempHum" style="min-height:300px"></div>
         </div>
 
         <!-- Grafik Gas Amonia -->
@@ -65,7 +62,7 @@
                 <span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded">Batas: 30 ppm</span>
             </div>
             <p class="text-xs text-gray-400 mb-4" id="desc-Ammonia">Pemantauan ambang batas bahaya gas</p>
-            <div id="chartAmmonia"></div>
+            <div id="chartAmmonia" style="min-height:300px"></div>
         </div>
 
         <!-- Grafik Tren Total Massa -->
@@ -73,14 +70,14 @@
             <div id="loader-TotalMass" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 hidden flex justify-center items-center rounded-[1.5rem]"><i class="fa-solid fa-spinner fa-spin text-3xl text-primary"></i></div>
             <h3 class="text-lg font-bold text-gray-700 mb-2">Tren Pertumbuhan Massa Total</h3>
             <p class="text-xs text-gray-400 mb-4" id="desc-TotalMass">Akumulasi bobot keseluruhan (Kg) dari waktu ke waktu</p>
-            <div id="chartTotalMass"></div>
+            <div id="chartTotalMass" style="min-height:300px"></div>
         </div>
 
         <!-- Grafik Distribusi Massa per Rak (Bar) -->
         <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6">
             <h3 class="text-lg font-bold text-gray-700 mb-2">Distribusi Massa Terkini Per Rak</h3>
             <p class="text-xs text-gray-400 mb-4">Bobot maggot di 6 tingkat biopond saat ini</p>
-            <div id="chartBiopondMass"></div>
+            <div id="chartBiopondMass" style="min-height:300px"></div>
         </div>
 
     </div>
@@ -88,6 +85,8 @@
 @endsection
 
 @push('scripts')
+{{-- ApexCharts: deferred agar tidak blocking render --}}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts" defer></script>
 <script>
     // Inisialisasi Objek Chart secara global
     let chartTempHum, chartAmmonia, chartTotalMass, chartBiopondMass;
@@ -120,55 +119,60 @@
         }
     };
 
-    // Render Grafik Awal
-    chartTempHum = new ApexCharts(document.querySelector("#chartTempHum"), {
-        ...commonOptions,
-        series: [
-            { name: 'Suhu (°C)', type: 'line', data: tempData },
-            { name: 'Kelembaban (%)', type: 'line', data: humData }
-        ],
-        chart: { height: 300, type: 'line', toolbar: { show: false } },
-        colors: ['#f97316', '#3b82f6'],
-        yaxis: [
-            { title: { text: 'Suhu (°C)', style: { color: '#f97316', fontSize: '10px' } }, labels: { style: { colors: '#f97316' } } },
-            { opposite: true, title: { text: 'Kelembaban (%)', style: { color: '#3b82f6', fontSize: '10px' } }, labels: { style: { colors: '#3b82f6' } } }
-        ],
-        legend: { position: 'top' }
-    });
-    chartTempHum.render();
+    // Fungsi render semua grafik
+    function renderAllCharts() {
+        chartTempHum = new ApexCharts(document.querySelector("#chartTempHum"), {
+            ...commonOptions,
+            series: [
+                { name: 'Suhu (°C)', type: 'line', data: tempData },
+                { name: 'Kelembaban (%)', type: 'line', data: humData }
+            ],
+            chart: { height: 300, type: 'line', toolbar: { show: false } },
+            colors: ['#f97316', '#3b82f6'],
+            yaxis: [
+                { title: { text: 'Suhu (°C)', style: { color: '#f97316', fontSize: '10px' } }, labels: { style: { colors: '#f97316' } } },
+                { opposite: true, title: { text: 'Kelembaban (%)', style: { color: '#3b82f6', fontSize: '10px' } }, labels: { style: { colors: '#3b82f6' } } }
+            ],
+            legend: { position: 'top' }
+        });
+        chartTempHum.render();
 
-    chartAmmonia = new ApexCharts(document.querySelector("#chartAmmonia"), {
-        ...commonOptions,
-        series: [{ name: 'Amonia (ppm)', data: ammoniaData }],
-        chart: { height: 300, type: 'area', toolbar: { show: false } },
-        colors: ['#ef4444'],
-        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.1, stops: [0, 90, 100] } },
-        dataLabels: { enabled: false },
-        annotations: { yaxis: [{ y: 30, borderColor: '#dc2626', label: { borderColor: '#dc2626', style: { color: '#fff', background: '#dc2626' }, text: 'Bahaya (>30 ppm)' } }] }
-    });
-    chartAmmonia.render();
+        chartAmmonia = new ApexCharts(document.querySelector("#chartAmmonia"), {
+            ...commonOptions,
+            series: [{ name: 'Amonia (ppm)', data: ammoniaData }],
+            chart: { height: 300, type: 'area', toolbar: { show: false } },
+            colors: ['#ef4444'],
+            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.1, stops: [0, 90, 100] } },
+            dataLabels: { enabled: false },
+            annotations: { yaxis: [{ y: 30, borderColor: '#dc2626', label: { borderColor: '#dc2626', style: { color: '#fff', background: '#dc2626' }, text: 'Bahaya (>30 ppm)' } }] }
+        });
+        chartAmmonia.render();
 
-    chartTotalMass = new ApexCharts(document.querySelector("#chartTotalMass"), {
-        ...commonOptions,
-        series: [{ name: 'Total Massa (kg)', data: totalMassData }],
-        chart: { height: 300, type: 'area', toolbar: { show: false } },
-        colors: ['#8b5cf6'],
-        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.1, stops: [0, 90, 100] } },
-        dataLabels: { enabled: false },
-        yaxis: { labels: { formatter: (value) => { return value ? value.toFixed(1) + " kg" : "0 kg" } } }
-    });
-    chartTotalMass.render();
+        chartTotalMass = new ApexCharts(document.querySelector("#chartTotalMass"), {
+            ...commonOptions,
+            series: [{ name: 'Total Massa (kg)', data: totalMassData }],
+            chart: { height: 300, type: 'area', toolbar: { show: false } },
+            colors: ['#8b5cf6'],
+            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.1, stops: [0, 90, 100] } },
+            dataLabels: { enabled: false },
+            yaxis: { labels: { formatter: (value) => { return value ? value.toFixed(1) + " kg" : "0 kg" } } }
+        });
+        chartTotalMass.render();
 
-    chartBiopondMass = new ApexCharts(document.querySelector("#chartBiopondMass"), {
-        series: [{ name: 'Massa (gram)', data: latestBiopond }],
-        chart: { height: 300, type: 'bar', toolbar: { show: false } },
-        plotOptions: { bar: { borderRadius: 4, horizontal: false, columnWidth: '50%', distributed: true } },
-        dataLabels: { enabled: false },
-        xaxis: { categories: ['Rak 1', 'Rak 2', 'Rak 3', 'Rak 4', 'Rak 5', 'Rak 6'] },
-        colors: ['#38a169', '#319795', '#3182ce', '#805ad5', '#d53f8c', '#e53e3e'],
-        legend: { show: false }
-    });
-    chartBiopondMass.render();
+        chartBiopondMass = new ApexCharts(document.querySelector("#chartBiopondMass"), {
+            series: [{ name: 'Massa (gram)', data: latestBiopond }],
+            chart: { height: 300, type: 'bar', toolbar: { show: false } },
+            plotOptions: { bar: { borderRadius: 4, horizontal: false, columnWidth: '50%', distributed: true } },
+            dataLabels: { enabled: false },
+            xaxis: { categories: ['Rak 1', 'Rak 2', 'Rak 3', 'Rak 4', 'Rak 5', 'Rak 6'] },
+            colors: ['#38a169', '#319795', '#3182ce', '#805ad5', '#d53f8c', '#e53e3e'],
+            legend: { show: false }
+        });
+        chartBiopondMass.render();
+    }
+
+    // Inisialisasi grafik setelah DOM & ApexCharts siap (defer script jalan sebelum DOMContentLoaded)
+    document.addEventListener('DOMContentLoaded', renderAllCharts);
 
     // ==========================================
     // FUNGSI UPDATE GRAFIK DINAMIS (AJAX FETCH)

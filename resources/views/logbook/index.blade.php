@@ -117,7 +117,7 @@
         <!-- ========================================== -->
         <!-- MODE TABEL                                 -->
         <!-- ========================================== -->
-        <div x-show="viewMode === 'table'" class="overflow-x-auto">
+        <div x-show="viewMode === 'table'" class="overflow-x-auto" style="contain:layout style">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="border-b-2 border-gray-100">
@@ -143,7 +143,7 @@
                         @endphp
 
                         <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer group"
-                            @click="rows['{{ $rowId }}'] = !rows['{{ $rowId }}']">
+                            @click="rows['{{ $rowId }}'] = !rows['{{ $rowId }}']" style="contain:layout style">
                             <td class="py-4 pl-3">
                                 <i class="fa-solid text-gray-400 transition-transform duration-200 text-xs"
                                    :class="rows['{{ $rowId }}'] ? 'fa-chevron-down rotate-0' : 'fa-chevron-right'"></i>
@@ -166,7 +166,7 @@
                             </td>
                         </tr>
 
-                        <tr x-show="rows['{{ $rowId }}']" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="bg-gray-50/70">
+                        <tr x-show="rows['{{ $rowId }}']" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="bg-gray-50/70" style="content-visibility:auto;contain-intrinsic-size:auto 120px">
                             <td colspan="8" class="p-2 sm:p-3">
                                 <div class="grid grid-cols-3 lg:grid-cols-6 gap-1.5 sm:gap-2">
                                     @for ($i = 0; $i < 6; $i++)
@@ -227,7 +227,7 @@
                     $cardBg = $loop->odd ? 'bg-white' : 'bg-blue-50/50';
                     $cardBorder = $loop->odd ? 'border-gray-100' : 'border-blue-200';
                 @endphp
-                <div class="{{ $cardBg }} rounded-xl p-3 sm:p-4 border {{ $cardBorder }}">
+                <div class="{{ $cardBg }} rounded-xl p-3 sm:p-4 border {{ $cardBorder }}" style="content-visibility:auto;contain-intrinsic-size:auto 200px">
                     <!-- Header: Tanggal & Waktu -->
                     <div class="flex justify-between items-center mb-3">
                         <div class="flex items-center gap-2">
