@@ -3,30 +3,62 @@
 @section('title', 'Statistik & Analitik Lanjutan')
 
 @section('content')
-    <!-- KPI Cards (Indikator Kinerja Utama) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between hover:shadow-md transition-shadow">
+    <!-- KPI Cards (Indikator Kinerja Utama) — 12 Bulan Terakhir -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        @php
+            function formatMass($grams) {
+                // Database menyimpan dalam GRAM, konversi ke KG dulu
+                $kg = $grams / 1000;
+                if ($kg >= 1000) {
+                    return number_format($kg / 1000, 2, ',', '.') . ' <span class="text-lg font-medium">ton</span>';
+                }
+                return number_format($kg, 2, ',', '.') . ' <span class="text-lg font-medium">kg</span>';
+            }
+        @endphp
+
+        {{-- 1. Total Akumulasi Panen --}}
+        <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-[1.5rem] shadow-sm p-5 text-white flex items-center justify-between hover:shadow-md transition-shadow">
             <div>
-                <p class="text-green-100 text-sm font-bold uppercase tracking-wider mb-1">Total Akumulasi Panen</p>
-                <h3 class="text-3xl font-black">{{ number_format($totalHarvest, 2, ',', '.') }} <span class="text-lg font-medium">kg</span></h3>
+                <p class="text-green-100 text-xs font-bold uppercase tracking-wider mb-1">Total Panen</p>
+                <h3 class="text-2xl font-black">{!! formatMass($totalHarvest) !!}</h3>
             </div>
-            <i class="fa-solid fa-box-open text-5xl opacity-30"></i>
-        </div>
-        
-        <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between hover:shadow-md transition-shadow">
-            <div>
-                <p class="text-blue-100 text-sm font-bold uppercase tracking-wider mb-1">Rata-rata Waste Reduction (WRI)</p>
-                <h3 class="text-3xl font-black">{{ number_format($avgWri, 1, ',', '.') }} <span class="text-lg font-medium">%/hari</span></h3>
-            </div>
-            <i class="fa-solid fa-recycle text-5xl opacity-30"></i>
+            <i class="fa-solid fa-box-open text-4xl opacity-30"></i>
         </div>
 
-        <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between hover:shadow-md transition-shadow">
+        {{-- 2. Total Sampah Organik Diolah (BARU - UI GreenMetric WS.3) --}}
+        <div class="bg-gradient-to-r from-amber-500 to-amber-600 rounded-[1.5rem] shadow-sm p-5 text-white flex items-center justify-between hover:shadow-md transition-shadow">
             <div>
-                <p class="text-purple-100 text-sm font-bold uppercase tracking-wider mb-1">Efisiensi Biokonversi (ECI)</p>
-                <h3 class="text-3xl font-black">{{ number_format($avgEci, 1, ',', '.') }} <span class="text-lg font-medium">%</span></h3>
+                <p class="text-amber-100 text-xs font-bold uppercase tracking-wider mb-1">Sampah Diolah</p>
+                <h3 class="text-2xl font-black">{!! formatMass($totalWasteInput) !!}</h3>
             </div>
-            <i class="fa-solid fa-bug text-5xl opacity-30"></i>
+            <i class="fa-solid fa-trash-can text-4xl opacity-30"></i>
+        </div>
+
+        {{-- 3. Total Residu / Kasgot (BARU - UI GreenMetric Inovasi Limbah) --}}
+        <div class="bg-gradient-to-r from-teal-500 to-teal-600 rounded-[1.5rem] shadow-sm p-5 text-white flex items-center justify-between hover:shadow-md transition-shadow">
+            <div>
+                <p class="text-teal-100 text-xs font-bold uppercase tracking-wider mb-1">Residu Kasgot</p>
+                <h3 class="text-2xl font-black">{!! formatMass($totalResidue) !!}</h3>
+            </div>
+            <i class="fa-solid fa-seedling text-4xl opacity-30"></i>
+        </div>
+
+        {{-- 4. Rata-rata Waste Reduction (WRI) --}}
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-[1.5rem] shadow-sm p-5 text-white flex items-center justify-between hover:shadow-md transition-shadow">
+            <div>
+                <p class="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">Rata-rata WRI</p>
+                <h3 class="text-2xl font-black">{{ number_format($avgWri, 1, ',', '.') }} <span class="text-lg font-medium">%/hari</span></h3>
+            </div>
+            <i class="fa-solid fa-recycle text-4xl opacity-30"></i>
+        </div>
+
+        {{-- 5. Efisiensi Biokonversi (ECI) --}}
+        <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-[1.5rem] shadow-sm p-5 text-white flex items-center justify-between hover:shadow-md transition-shadow">
+            <div>
+                <p class="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">Rata-rata ECI</p>
+                <h3 class="text-2xl font-black">{{ number_format($avgEci, 1, ',', '.') }} <span class="text-lg font-medium">%</span></h3>
+            </div>
+            <i class="fa-solid fa-bug text-4xl opacity-30"></i>
         </div>
     </div>
 
@@ -36,9 +68,9 @@
         
         <!-- PERBAIKAN: Menggunakan Grid 2 kolom di HP agar tidak overflow, lalu flex memanjang di sm/laptop -->
         <div class="bg-gray-200 p-1.5 rounded-xl grid grid-cols-2 sm:flex w-full md:w-auto shadow-inner gap-1.5">
-            <button onclick="updateCharts('daily')" id="btn-daily" class="filter-btn px-3 sm:px-6 py-2 text-xs sm:text-sm font-bold rounded-lg bg-white shadow-sm text-primary transition-all">Harian</button>
+            <button onclick="updateCharts('daily')" id="btn-daily" class="filter-btn px-3 sm:px-6 py-2 text-xs sm:text-sm font-medium rounded-lg text-gray-500 hover:text-gray-800 transition-all">Harian</button>
             <button onclick="updateCharts('weekly')" id="btn-weekly" class="filter-btn px-3 sm:px-6 py-2 text-xs sm:text-sm font-medium rounded-lg text-gray-500 hover:text-gray-800 transition-all">Mingguan</button>
-            <button onclick="updateCharts('monthly')" id="btn-monthly" class="filter-btn px-3 sm:px-6 py-2 text-xs sm:text-sm font-medium rounded-lg text-gray-500 hover:text-gray-800 transition-all">Bulanan</button>
+            <button onclick="updateCharts('monthly')" id="btn-monthly" class="filter-btn px-3 sm:px-6 py-2 text-xs sm:text-sm font-bold rounded-lg bg-white shadow-sm text-primary transition-all">Bulanan</button>
             <button onclick="updateCharts('yearly')" id="btn-yearly" class="filter-btn px-3 sm:px-6 py-2 text-xs sm:text-sm font-medium rounded-lg text-gray-500 hover:text-gray-800 transition-all">Tahunan</button>
         </div>
     </div>
@@ -50,7 +82,7 @@
         <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 relative">
             <div id="loader-TempHum" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 hidden flex justify-center items-center rounded-[1.5rem]"><i class="fa-solid fa-spinner fa-spin text-3xl text-primary"></i></div>
             <h3 class="text-lg font-bold text-gray-700 mb-2">Tren Suhu & Kelembaban Udara</h3>
-            <p class="text-xs text-gray-400 mb-4" id="desc-TempHum">Pergerakan rata-rata per jam (24 jam terakhir)</p>
+            <p class="text-xs text-gray-400 mb-4" id="desc-TempHum">Pergerakan rata-rata per hari (30 hari terakhir)</p>
             <div id="chartTempHum" style="min-height:300px"></div>
         </div>
 
@@ -61,7 +93,7 @@
                 <h3 class="text-lg font-bold text-gray-700">Fluktuasi Gas Amonia</h3>
                 <span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded">Batas: 30 ppm</span>
             </div>
-            <p class="text-xs text-gray-400 mb-4" id="desc-Ammonia">Pemantauan ambang batas bahaya gas</p>
+            <p class="text-xs text-gray-400 mb-4" id="desc-Ammonia">Pergerakan rata-rata per hari (30 hari terakhir)</p>
             <div id="chartAmmonia" style="min-height:300px"></div>
         </div>
 
@@ -69,15 +101,19 @@
         <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 relative">
             <div id="loader-TotalMass" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 hidden flex justify-center items-center rounded-[1.5rem]"><i class="fa-solid fa-spinner fa-spin text-3xl text-primary"></i></div>
             <h3 class="text-lg font-bold text-gray-700 mb-2">Tren Pertumbuhan Massa Total</h3>
-            <p class="text-xs text-gray-400 mb-4" id="desc-TotalMass">Akumulasi bobot keseluruhan (Kg) dari waktu ke waktu</p>
+            <p class="text-xs text-gray-400 mb-4" id="desc-TotalMass">Pergerakan rata-rata per hari (30 hari terakhir)</p>
             <div id="chartTotalMass" style="min-height:300px"></div>
         </div>
 
-        <!-- Grafik Distribusi Massa per Rak (Bar) -->
-        <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6">
-            <h3 class="text-lg font-bold text-gray-700 mb-2">Distribusi Massa Terkini Per Rak</h3>
-            <p class="text-xs text-gray-400 mb-4">Bobot maggot di 6 tingkat biopond saat ini</p>
-            <div id="chartBiopondMass" style="min-height:300px"></div>
+        <!-- Grafik Tren Pengolahan Sampah Organik (UI GreenMetric WS.3 / GD.2) -->
+        <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 relative">
+            <div id="loader-WasteTrend" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 hidden flex justify-center items-center rounded-[1.5rem]"><i class="fa-solid fa-spinner fa-spin text-3xl text-primary"></i></div>
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-lg font-bold text-gray-700">Tren Pengolahan Sampah Organik</h3>
+                <span class="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded">UI GreenMetric WS.3</span>
+            </div>
+            <p class="text-xs text-gray-400 mb-4" id="desc-WasteTrend">Total sampah organik yang diolah per bulan (1 tahun terakhir)</p>
+            <div id="chartWasteTrend" style="min-height:300px"></div>
         </div>
 
     </div>
@@ -89,7 +125,7 @@
 <script src="https://cdn.jsdelivr.net/npm/apexcharts" defer></script>
 <script>
     // Inisialisasi Objek Chart secara global
-    let chartTempHum, chartAmmonia, chartTotalMass, chartBiopondMass;
+    let chartTempHum, chartAmmonia, chartTotalMass, chartWasteTrend;
 
     // Data Awal dari Controller saat halaman pertama dimuat
     let timeLabels = {!! json_encode($timestamps) !!};
@@ -97,7 +133,8 @@
     let humData = {!! json_encode($humData) !!};
     let ammoniaData = {!! json_encode($ammoniaData) !!};
     let totalMassData = {!! json_encode($totalMassData) !!};
-    let latestBiopond = {!! json_encode($latestBiopond) !!};
+    let wasteTrendLabels = {!! json_encode($wasteTrendLabels) !!};
+    let wasteTrendData = {!! json_encode($wasteTrendData) !!};
     
     // Perbaikan: Menampilkan Label Sumbu X agar rentang waktu terlihat jelas
     const commonOptions = {
@@ -118,6 +155,13 @@
             x: { show: true }
         }
     };
+
+    // Helper format satuan untuk grafik (data dalam GRAM dari DB)
+    function formatWasteMass(grams) {
+        const kg = grams / 1000;
+        if (kg >= 1000) return (kg / 1000).toFixed(2) + ' ton';
+        return kg.toFixed(2) + ' kg';
+    }
 
     // Fungsi render semua grafik
     function renderAllCharts() {
@@ -159,20 +203,44 @@
         });
         chartTotalMass.render();
 
-        chartBiopondMass = new ApexCharts(document.querySelector("#chartBiopondMass"), {
-            series: [{ name: 'Massa (gram)', data: latestBiopond }],
-            chart: { height: 300, type: 'bar', toolbar: { show: false } },
-            plotOptions: { bar: { borderRadius: 4, horizontal: false, columnWidth: '50%', distributed: true } },
-            dataLabels: { enabled: false },
-            xaxis: { categories: ['Rak 1', 'Rak 2', 'Rak 3', 'Rak 4', 'Rak 5', 'Rak 6'] },
-            colors: ['#38a169', '#319795', '#3182ce', '#805ad5', '#d53f8c', '#e53e3e'],
-            legend: { show: false }
+        // Grafik Tren Pengolahan Sampah (BARU)
+        chartWasteTrend = new ApexCharts(document.querySelector("#chartWasteTrend"), {
+            series: [{ name: 'Sampah Diolah', data: wasteTrendData }],
+            chart: { height: 300, type: 'bar', toolbar: { show: false }, fontFamily: 'inherit' },
+            plotOptions: { bar: { borderRadius: 6, columnWidth: '55%', distributed: false } },
+            colors: ['#f59e0b'],
+            dataLabels: { 
+                enabled: true,
+                formatter: (val) => formatWasteMass(val),
+                style: { fontSize: '11px', colors: ['#92400e'] }
+            },
+            xaxis: { 
+                categories: wasteTrendLabels, 
+                labels: { rotate: -45, style: { colors: '#9ca3af', fontSize: '11px' } } 
+            },
+            yaxis: { 
+                labels: { formatter: (val) => formatWasteMass(val) },
+                title: { text: 'Volume Sampah', style: { fontSize: '11px' } }
+            },
+            tooltip: { 
+                theme: 'light',
+                y: { formatter: (val) => formatWasteMass(val) }
+            },
+            noData: {
+                text: 'Belum ada data siklus',
+                align: 'center',
+                verticalAlign: 'middle',
+                style: { color: '#9ca3af', fontSize: '14px' }
+            }
         });
-        chartBiopondMass.render();
+        chartWasteTrend.render();
     }
 
-    // Inisialisasi grafik setelah DOM & ApexCharts siap (defer script jalan sebelum DOMContentLoaded)
-    document.addEventListener('DOMContentLoaded', renderAllCharts);
+    // Inisialisasi grafik setelah DOM & ApexCharts siap, lalu fetch data bulanan
+    document.addEventListener('DOMContentLoaded', () => {
+        renderAllCharts();
+        updateCharts('monthly');
+    });
 
     // ==========================================
     // FUNGSI UPDATE GRAFIK DINAMIS (AJAX FETCH)

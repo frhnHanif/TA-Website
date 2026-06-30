@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\SensorData;
 use App\Models\DeviceControl;
 use App\Models\Cycle;
@@ -86,12 +87,17 @@ class SensorDataController extends Controller
         // Ambil Data Siklus yang Sedang Berjalan
         $activeCycle = \App\Models\Cycle::where('status', 'berjalan')->first();
 
-        // Hitung Akumulasi dan Rata-rata Performa dari Siklus yang Selesai
-        $totalHarvest = \App\Models\Cycle::where('status', 'selesai')->sum('harvest_mass');
-        $avgWri = \App\Models\Cycle::where('status', 'selesai')->avg('wri_result') ?? 0;
-        $avgEci = \App\Models\Cycle::where('status', 'selesai')->avg('eci_result') ?? 0;
+        // Hitung Akumulasi dan Rata-rata Performa dari Siklus yang Selesai (12 bulan terakhir)
+        $finishedLastYear = \App\Models\Cycle::where('status', 'selesai')
+            ->where('end_date', '>=', now()->subYear());
 
-        return view('dashboard.index', compact('latestData', 'recentLogs', 'dailyStats', 'activeCycle', 'totalHarvest', 'avgWri', 'avgEci'));
+        $totalHarvest = $finishedLastYear->sum('harvest_mass');
+        $totalWasteInput = $finishedLastYear->sum('total_waste_input');
+        $totalResidue = $finishedLastYear->sum('residue_mass');
+        $avgWri = $finishedLastYear->avg('wri_result') ?? 0;
+        $avgEci = $finishedLastYear->avg('eci_result') ?? 0;
+
+        return view('dashboard.index', compact('latestData', 'recentLogs', 'dailyStats', 'activeCycle', 'totalHarvest', 'totalWasteInput', 'totalResidue', 'avgWri', 'avgEci'));
     }
 
     // 2. Halaman e-Logbook (Riwayat Data Tabel)
@@ -244,17 +250,32 @@ class SensorDataController extends Controller
         });
 
         $latestData = $sensorHistory->last();
-        $latestBiopond = $latestData ? (is_array($latestData->biopond) ? $latestData->biopond : json_decode($latestData->biopond, true)) : [0,0,0,0,0,0];
-        $latestSoil = $latestData ? (is_array($latestData->soil) ? $latestData->soil : json_decode($latestData->soil, true)) : [0,0,0,0,0,0];
 
-        // Hitung Akumulasi dan Rata-rata Performa dari Siklus yang Selesai
-        $totalHarvest = \App\Models\Cycle::where('status', 'selesai')->sum('harvest_mass');
-        $avgWri = \App\Models\Cycle::where('status', 'selesai')->avg('wri_result') ?? 0;
-        $avgEci = \App\Models\Cycle::where('status', 'selesai')->avg('eci_result') ?? 0;
+        // KPI: 12 bulan terakhir (periode pelaporan UI GreenMetric)
+        $finishedLastYear = \App\Models\Cycle::where('status', 'selesai')
+            ->where('end_date', '>=', now()->subYear());
+
+        $totalHarvest = $finishedLastYear->sum('harvest_mass');
+        $totalWasteInput = $finishedLastYear->sum('total_waste_input');
+        $totalResidue = $finishedLastYear->sum('residue_mass');
+        $avgWri = $finishedLastYear->avg('wri_result') ?? 0;
+        $avgEci = $finishedLastYear->avg('eci_result') ?? 0;
+
+        // Data awal grafik Tren Pengolahan Sampah (default: 12 bulan terakhir per bulan)
+        $wasteTrend = \App\Models\Cycle::where('status', 'selesai')
+            ->where('start_date', '>=', now()->subYear())
+            ->selectRaw("DATE_FORMAT(start_date, '%b %Y') as label, SUM(total_waste_input) as total")
+            ->groupBy('label')
+            ->orderByRaw('MIN(start_date) asc')
+            ->get();
+
+        $wasteTrendLabels = $wasteTrend->pluck('label');
+        $wasteTrendData = $wasteTrend->pluck('total')->map(fn($v) => round((float) $v, 2));
 
         return view('statistik.index', compact(
             'timestamps', 'tempData', 'humData', 'ammoniaData', 'totalMassData', 
-            'latestBiopond', 'latestSoil', 'totalHarvest', 'avgWri', 'avgEci'
+            'totalHarvest', 'totalWasteInput', 'totalResidue', 'avgWri', 'avgEci',
+            'wasteTrendLabels', 'wasteTrendData'
         ));
     }
 
@@ -315,7 +336,41 @@ class SensorDataController extends Controller
             'humData' => $humData,
             'ammoniaData' => $ammoniaData,
             'totalMassData' => $totalMassData,
+            'wasteTrendLabels' => $this->getWasteTrend('yearly', 'labels'),
+            'wasteTrendData' => $this->getWasteTrend('yearly', 'data'),
         ]);
+    }
+
+    /**
+     * Ambil data tren pengolahan sampah dari tabel cycles sesuai periode filter.
+     */
+    private function getWasteTrend(string $period, string $field)
+    {
+        $query = Cycle::where('status', 'selesai');
+
+        if ($period === 'yearly') {
+            $query->where('start_date', '>=', now()->subYear());
+            $groups = $query->selectRaw("DATE_FORMAT(start_date, '%b %Y') as label, SUM(total_waste_input) as total")
+                ->groupBy('label')->orderByRaw('MIN(start_date) asc')->get();
+        } elseif ($period === 'monthly') {
+            $query->where('start_date', '>=', now()->subDays(30));
+            $groups = $query->selectRaw("DATE_FORMAT(start_date, '%d %b') as label, SUM(total_waste_input) as total")
+                ->groupBy('label')->orderByRaw('MIN(start_date) asc')->get();
+        } elseif ($period === 'weekly') {
+            $query->where('start_date', '>=', now()->subDays(7));
+            $groups = $query->selectRaw("DATE_FORMAT(start_date, '%d %b') as label, SUM(total_waste_input) as total")
+                ->groupBy('label')->orderByRaw('MIN(start_date) asc')->get();
+        } else {
+            // daily: 24 jam terakhir — fallback ke per hari
+            $query->where('start_date', '>=', now()->subDay());
+            $groups = $query->selectRaw("DATE_FORMAT(start_date, '%d %b') as label, SUM(total_waste_input) as total")
+                ->groupBy('label')->orderByRaw('MIN(start_date) asc')->get();
+        }
+
+        if ($field === 'labels') {
+            return $groups->pluck('label');
+        }
+        return $groups->pluck('total')->map(fn($v) => round((float) $v, 2));
     }
 
     // Method KHUSUS WEB untuk menerima klik tombol dan menyimpannya ke DB

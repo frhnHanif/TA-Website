@@ -216,29 +216,61 @@
         <!-- ========================================== -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <a href="/statistik" class="block col-span-1 flex flex-col gap-4 group">
-                <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between group-hover:-translate-y-1 group-hover:shadow-lg transition-all">
+            <a href="/statistik" class="block col-span-1 flex flex-col gap-3 group">
+                @php
+                    function formatMassDash($grams) {
+                        // Database menyimpan dalam GRAM, konversi ke KG dulu
+                        $kg = $grams / 1000;
+                        if ($kg >= 1000) {
+                            return number_format($kg / 1000, 2, ',', '.') . ' <span class="text-sm font-medium">ton</span>';
+                        }
+                        return number_format($kg, 2, ',', '.') . ' <span class="text-sm font-medium">kg</span>';
+                    }
+                @endphp
+
+                <!-- Total Panen -->
+                <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-[1.5rem] shadow-sm p-4 text-white flex items-center justify-between group-hover:-translate-y-1 group-hover:shadow-lg transition-all">
                     <div>
-                        <p class="text-green-100 text-xs font-bold uppercase tracking-wider mb-1">Total Akumulasi Panen</p>
-                        <h3 class="text-3xl font-black">{{ number_format($totalHarvest, 2, ',', '.') }} <span class="text-lg font-medium">kg</span></h3>
+                        <p class="text-green-100 text-xs font-bold uppercase tracking-wider mb-1">Total Panen</p>
+                        <h3 class="text-xl font-black">{!! formatMassDash($totalHarvest) !!}</h3>
                     </div>
-                    <i class="fa-solid fa-box-open text-5xl opacity-30"></i>
-                </div>
-                
-                <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between group-hover:-translate-y-1 group-hover:shadow-lg transition-all delay-75">
-                    <div>
-                        <p class="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">Rata-rata Waste Reduction (WRI)</p>
-                        <h3 class="text-3xl font-black">{{ number_format($avgWri, 1, ',', '.') }} <span class="text-lg font-medium">%/hari</span></h3>
-                    </div>
-                    <i class="fa-solid fa-recycle text-5xl opacity-30"></i>
+                    <i class="fa-solid fa-box-open text-3xl opacity-30"></i>
                 </div>
 
-                <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between group-hover:-translate-y-1 group-hover:shadow-lg transition-all delay-150">
+                <!-- Total Sampah Diolah -->
+                <div class="bg-gradient-to-r from-amber-500 to-amber-600 rounded-[1.5rem] shadow-sm p-4 text-white flex items-center justify-between group-hover:-translate-y-1 group-hover:shadow-lg transition-all delay-75">
                     <div>
-                        <p class="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">Efisiensi Biokonversi (ECI)</p>
-                        <h3 class="text-3xl font-black">{{ number_format($avgEci, 1, ',', '.') }} <span class="text-lg font-medium">%</span></h3>
+                        <p class="text-amber-100 text-xs font-bold uppercase tracking-wider mb-1">Sampah Diolah</p>
+                        <h3 class="text-xl font-black">{!! formatMassDash($totalWasteInput) !!}</h3>
                     </div>
-                    <i class="fa-solid fa-bug text-5xl opacity-30"></i>
+                    <i class="fa-solid fa-trash-can text-3xl opacity-30"></i>
+                </div>
+
+                <!-- Total Residu -->
+                <div class="bg-gradient-to-r from-teal-500 to-teal-600 rounded-[1.5rem] shadow-sm p-4 text-white flex items-center justify-between group-hover:-translate-y-1 group-hover:shadow-lg transition-all delay-100">
+                    <div>
+                        <p class="text-teal-100 text-xs font-bold uppercase tracking-wider mb-1">Residu Kasgot</p>
+                        <h3 class="text-xl font-black">{!! formatMassDash($totalResidue) !!}</h3>
+                    </div>
+                    <i class="fa-solid fa-seedling text-3xl opacity-30"></i>
+                </div>
+                
+                <!-- WRI -->
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-[1.5rem] shadow-sm p-4 text-white flex items-center justify-between group-hover:-translate-y-1 group-hover:shadow-lg transition-all delay-150">
+                    <div>
+                        <p class="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">Rata-rata WRI</p>
+                        <h3 class="text-xl font-black">{{ number_format($avgWri, 1, ',', '.') }} <span class="text-sm font-medium">%/hari</span></h3>
+                    </div>
+                    <i class="fa-solid fa-recycle text-3xl opacity-30"></i>
+                </div>
+
+                <!-- ECI -->
+                <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-[1.5rem] shadow-sm p-4 text-white flex items-center justify-between group-hover:-translate-y-1 group-hover:shadow-lg transition-all delay-200">
+                    <div>
+                        <p class="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">Rata-rata ECI</p>
+                        <h3 class="text-xl font-black">{{ number_format($avgEci, 1, ',', '.') }} <span class="text-sm font-medium">%</span></h3>
+                    </div>
+                    <i class="fa-solid fa-bug text-3xl opacity-30"></i>
                 </div>
             </a>
 
